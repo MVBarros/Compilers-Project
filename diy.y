@@ -15,8 +15,13 @@ int checkargs(char *name, Node *args);
 int nostring(Node *arg1, Node *arg2);
 int intonly(Node *arg, int);
 int noassign(Node *arg1, Node *arg2);
+extern void function(int pub, Node *type, char *name, Node *body);
+
 static int ncicl;
 static char *fpar;
+extern FILE* outfp;
+
+int localCounter = 0;
 %}
 
 %union {
@@ -57,8 +62,8 @@ file	:
 	| file public CONST tipo ID ';'	{ IDnew($4->value.i+5, $5, 0); declare($2, 1, $4, $5, 0); }
 	| file public tipo ID init	{ IDnew($3->value.i, $4, 0); declare($2, 0, $3, $4, $5); }
 	| file public CONST tipo ID init	{ IDnew($4->value.i+5, $5, 0); declare($2, 1, $4, $5, $6); }
-	| file public tipo ID { enter($2, $3->value.i, $4); } finit { function($2, $3, $4, $6); }
-	| file public VOID ID { enter($2, 4, $4); } finit { function($2, intNode(VOID, 4), $4, $6); }
+	| file public tipo ID { enter($2, $3->value.i, $4); } finit { function($2, $3, $4, $6); localCounter = 0; }
+	| file public VOID ID { enter($2, 4, $4); } finit { function($2, intNode(VOID, 4), $4, $6); localCounter = 0; }
 	;
 
 public	:               { $$ = 0; }
@@ -105,6 +110,11 @@ decls	:                       { $$ = 0; }
 param	: tipo ID               { $$ = binNode(PARAM, $1, strNode(ID, $2));
                                   IDnew($1->value.i, $2, 0);
                                   if (IDlevel() == 1) fpar[++fpar[0]] = $1->value.i;
+
+                                  else {
+                                  	localCounter += $1->value.i == 3 ? 8 : 4;
+                                  }
+
                                 }
 	;
 
@@ -296,14 +306,3 @@ int noassign(Node *arg1, Node *arg2) {
 	return 1;
 }
 
-void function(int pub, Node *type, char *name, Node *body)
-{
-	Node *bloco = LEFT_CHILD(body);
-	IDpop();
-	if (bloco != 0) { /* not a forward declaration */
-		long par;
-		int fwd = IDfind(name, &par);
-		if (fwd > 40) yyerror("duplicate function");
-		else IDreplace(fwd+40, name, par);
-	}
-}

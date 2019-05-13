@@ -6,6 +6,33 @@
 #include "node.h"
 #include "tabid.h"
 #include "postfix.h"
+
+extern FILE *outfp;
+char *dupstr(const char *s);
+
+static long brklbl[20], brkcnt; /* break labels */
+/* label _L0 is a break without a while/switch) */
+
+static char *extrns[100]; /* emit externs at the end only */
+static int extcnt;
+
+int lbl;
+char *mklbl(int n) {
+  static char buf[20];
+  sprintf(buf, "_i%d", n);
+  return strcpy(malloc(strlen(buf)+1),buf);
+}
+
+static void outstr(char *s) {
+  while (*s) fprintf(outfp, pfCHAR, (unsigned char)*s++);
+  fprintf(outfp, pfCHAR, 0);
+}
+static char *mkfunc(char *s) {
+  static char buf[80];
+  strcpy(buf, "_");
+  strcat(buf, s);
+  return buf;
+}
 %}
 %term END=';'
 %include "y.tab.h"
@@ -16,3 +43,35 @@ stmt:	END	1	{	}
 extern void yyerror(const char*);
 extern char **yynames;
 extern int trace;
+extern int localCounter;
+
+void externs()
+{
+  int i;
+
+  for (i = 0; i < extcnt; i++)
+    if (extrns[i])
+      fprintf(outfp, pfEXTRN, extrns[i]);
+}
+
+
+void function(int pub, Node *type, char *name, Node *body)
+{
+	Node *bloco = LEFT_CHILD(body);
+	IDpop();
+	if (bloco != 0) { /* not a forward declaration */
+		long par;
+		int fwd = IDfind(name, &par);
+		if (fwd > 40) yyerror("duplicate function");
+		else {
+			IDreplace(fwd+40, name, par);
+
+			fflush(stdout);
+  		fprintf(outfp, pfTEXT pfALIGN pfGLOBL pfLABEL pfENTER, mkfunc(name), pfFUNC, mkfunc(name), localCounter * (pfWORD/4));
+  		yyselect(body);
+  		fprintf(outfp, pfLEAVE pfRET); /* just in case ... */
+			freeNode(body);
+
+		}
+	}
+}
