@@ -17,11 +17,17 @@ int intonly(Node *arg, int);
 int noassign(Node *arg1, Node *arg2);
 extern void function(int pub, Node *type, char *name, Node *body);
 
+extern void externs();
+
 static int ncicl;
 static char *fpar;
 extern FILE* outfp;
 
 int localCounter = 0;
+
+int localPos = 0;
+int globalPos = 8;
+
 %}
 
 %union {
@@ -54,8 +60,10 @@ int localCounter = 0;
 %type <n> bloco decls param base stmt step args list end brk lv expr
 %type <i> ptr intp public
 
-%token LOCAL POSINC POSDEC PTR CALL START PARAM NIL
+%token LOCAL POSINC POSDEC PTR CALL START PARAM NIL LIST ARGS NONE
 %%
+
+prog: file {externs();}
 file	:
 	| file error ';'
 	| file public tipo ID ';'	{ IDnew($3->value.i, $4, 0); declare($2, 0, $3, $4, 0); }
@@ -103,16 +111,20 @@ params	: param
 bloco	: '{' { IDpush(); } decls list end '}'    { $$ = binNode('{', $5 ? binNode(';', $4, $5) : $4, $3); IDpop(); }
 	;
 
-decls	:                       { $$ = /*0*/ nilNode(NIL); }
+decls	:                       { $$ = /*0*/ nilNode(NONE); }
 	| decls param ';'       { $$ = binNode(';', $1, $2); }
 	;
 
 param	: tipo ID               { $$ = binNode(PARAM, $1, strNode(ID, $2));
-                                  IDnew($1->value.i, $2, 0);
-                                  if (IDlevel() == 1) fpar[++fpar[0]] = $1->value.i;
-
+                                  
+                                  if (IDlevel() == 1) {
+                                  	fpar[++fpar[0]] = $1->value.i;
+                                  	IDnew($1->value.i, $2, globalPos);
+                                  	globalPos += $1->value.i == 3 ? 8 : 4;
+                                  	}
                                   else {
-                                  	localCounter += $1->value.i == 3 ? 8 : 4;
+                                  	localPos -= $1->value.i == 3 ? 8 : 4;
+                                  	IDnew($1->value.i, $2, localPos);
                                   }
 
                                 }
@@ -150,16 +162,16 @@ intp	:       { $$ = 1; }
 	;
 
 list	: base
-	| list base     { $$ = binNode(';', $1, $2); }
+	| list base     { $$ = binNode(LIST, $1, $2); }
 	;
 
-args	: expr		{ $$ = binNode(',', nilNode(NIL), $1); }
-	| args ',' expr { $$ = binNode(',', $1, $3); }
+args	: expr		{ $$ = binNode(ARGS, nilNode(NIL), $1); }
+	| args ',' expr { $$ = binNode(ARGS, $1, $3); }
 	;
 
 lv	: ID		{ long pos; int typ = IDfind($1, &pos);
                           if (pos == 0) $$ = strNode(ID, $1);
-                          else $$ = intNode(LOCAL, pos);
+                          else {$$ = intNode(LOCAL, pos);}
 			  $$->info = typ;
 			}
 	| ID '[' expr ']' { Node *n;
@@ -231,12 +243,17 @@ void declare(int pub, int cnst, Node *type, char *name, Node *value)
     yyerror("wrong types in initialization");
 }
 void enter(int pub, int typ, char *name) {
+	globalPos = 8;
+	localPos = 0;
 	fpar = malloc(32); /* 31 arguments, at most */
 	fpar[0] = 0; /* argument count */
 	if (IDfind(name, (long*)IDtest) < 20)
 		IDnew(typ+20, name, (long)fpar);
 	IDpush();
-	if (typ != 4) IDnew(typ, name, 0);
+	if (typ != 4) {
+		IDnew(typ, name, globalPos);
+		globalPos += typ == 3 ? 8 : 4;
+	}
 }
 
 int checkargs(char *name, Node *args) {

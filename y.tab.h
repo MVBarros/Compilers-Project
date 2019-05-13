@@ -38,6 +38,9 @@
 #define START 294
 #define PARAM 295
 #define NIL 296
+#define LIST 297
+#define ARGS 298
+#define NONE 299
 #ifdef YYSTYPE
 #undef  YYSTYPE_IS_DECLARED
 #define YYSTYPE_IS_DECLARED 1

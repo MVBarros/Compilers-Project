@@ -34,11 +34,11 @@ static char *mkfunc(char *s) {
   return buf;
 }
 %}
-%term INSTR=';' BLOCK='{' ARGS='(' NEXT=','
+%term INSTR=';' BLOCK='{' ARGB='(' NEXT=',' ASSIGN='='
 %include "y.tab.h"
 %%
 
-finit: ARGS(bloco, params)
+finit: ARGB(bloco, params)
 
 params: param
 params:NEXT(params, param)
@@ -46,7 +46,7 @@ params:NEXT(params, param)
 bloco: BLOCK(list, decls)
 
 decls: INSTR(decls, param)
-decls: NIL
+decls: NONE
 
 param: PARAM(tipo, ID)
 
@@ -55,11 +55,26 @@ tipo: STRING
 tipo: NUMBER
 
 list: base
-list: INSTR(list, base)
+list: LIST(list, base)
 
 base: expr 1 {fprintf(outfp, pfTRASH, pfWORD); }
 
-expr:	STR	1	{	 lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl)); outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
+
+lval: LOCAL 1 {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
+
+
+expr: CALL(ID, arguments) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place)));}
+
+
+arguments: ARGS(NIL, expr) {p->place = 4; }
+arguments: ARGS(arguments, expr) {p->place = LEFT_CHILD(p)->place + 4;}
+
+
+expr:	STR	1	{	 lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl)); 
+					outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
+
+expr: INT 1 {fprintf(outfp, pfIMM, p->value.i);}
+expr: ATR(expr, lval) 1 {fprintf(outfp, pfSTORE);}
 
 %%
 #include "y.tab.h"
@@ -87,14 +102,21 @@ void function(int pub, Node *type, char *name, Node *body)
 		int fwd = IDfind(name, &par);
 		if (fwd > 40) yyerror("duplicate function");
 		else {
-			IDreplace(fwd+40, name, par);
+		IDreplace(fwd+40, name, par);
 
-			fflush(stdout);
+		fflush(stdout);
   		fprintf(outfp, pfTEXT pfALIGN pfGLOBL pfLABEL pfENTER, mkfunc(name), pfFUNC, mkfunc(name), localCounter * (pfWORD/4));
   		yyselect(body);
   		fprintf(outfp, pfLEAVE pfRET); /* just in case ... */
-			freeNode(body);
+		freeNode(body);
+		
+		for (int i = 0; i < extcnt; i++)
+		    if (extrns[i] && strcmp(extrns[i], mkfunc(name)) == 0) extrns[i] = 0;
+
 
 		}
+	}
+	else {
+		extrns[extcnt++] = dupstr(name);
 	}
 }
