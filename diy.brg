@@ -15,6 +15,7 @@ static long brklbl[20], brkcnt; /* break labels */
 
 static char *extrns[100]; /* emit externs at the end only */
 static int extcnt;
+extern int localPos;
 
 int lbl;
 char *mklbl(int n) {
@@ -105,7 +106,7 @@ void function(int pub, Node *type, char *name, Node *body)
 		IDreplace(fwd+40, name, par);
 
 		fflush(stdout);
-  		fprintf(outfp, pfTEXT pfALIGN pfGLOBL pfLABEL pfENTER, mkfunc(name), pfFUNC, mkfunc(name), localCounter * (pfWORD/4));
+  		fprintf(outfp, pfTEXT pfALIGN pfGLOBL pfLABEL pfENTER, mkfunc(name), pfFUNC, mkfunc(name), - localPos * (pfWORD/4));
   		yyselect(body);
   		fprintf(outfp, pfLEAVE pfRET); /* just in case ... */
 		freeNode(body);
@@ -117,6 +118,10 @@ void function(int pub, Node *type, char *name, Node *body)
 		}
 	}
 	else {
-		extrns[extcnt++] = dupstr(name);
+		char* buffer = (char*) malloc(sizeof(char) * 80);
+		*buffer = '\0';
+  		strcpy(buffer, "_");
+  		strcat(buffer, name);
+		extrns[extcnt++] = buffer;
 	}
 }
