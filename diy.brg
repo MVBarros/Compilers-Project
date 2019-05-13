@@ -34,10 +34,33 @@ static char *mkfunc(char *s) {
   return buf;
 }
 %}
-%term END=';'
+%term INSTR=';' BLOCK='{' ARGS='(' NEXT=','
 %include "y.tab.h"
 %%
-stmt:	END	1	{	}
+
+finit: ARGS(bloco, params)
+
+params: param
+params:NEXT(params, param)
+
+bloco: BLOCK(list, decls)
+
+decls: INSTR(decls, param)
+decls: NIL
+
+param: PARAM(tipo, ID)
+
+tipo: INTEGER
+tipo: STRING
+tipo: NUMBER
+
+list: base
+list: INSTR(list, base)
+
+base: expr 1 {fprintf(outfp, pfTRASH, pfWORD); }
+
+expr:	STR	1	{	 lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl)); outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
+
 %%
 #include "y.tab.h"
 extern void yyerror(const char*);

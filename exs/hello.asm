@@ -9,4 +9,4 @@ $_entry:
 ; ENTER
 	push	ebp
 	mov	ebp, esp
-	sub	esp, 16
+	sub	esp, 0

@@ -1,5 +1,5 @@
 /*
-generated at Mon May 13 16:17:04 2019
+generated at Mon May 13 16:37:44 2019
 by $Id: pburg.c,v 2.5 2017/11/16 09:41:42 prs Exp $
 */
 #include <stdio.h>
@@ -59,28 +59,48 @@ static void yypanic(YYCONST char *rot, YYCONST char *msg, int val) {
 }
 #endif
 static void yykids(NODEPTR_TYPE, int, NODEPTR_TYPE[]);
-#define yystmt_NT 1
+#define yyfinit_NT 1
+#define yybloco_NT 2
+#define yyparams_NT 3
+#define yyparam_NT 4
+#define yylist_NT 5
+#define yydecls_NT 6
+#define yytipo_NT 7
+#define yybase_NT 8
+#define yyexpr_NT 9
 
 static YYCONST char *yyntname[] = {
 	0,
-	"stmt",
+	"finit",
+	"bloco",
+	"params",
+	"param",
+	"list",
+	"decls",
+	"tipo",
+	"base",
+	"expr",
 	0
 };
 
 static YYCONST char *yytermname[] = {
  "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
- "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
- "", "", "", "", "", "", "", "", "", "", "",
-	/* 60 */ "END",
- "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
- "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
- "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
- "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
- "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+ "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+	/* 41 */ "ARGS",
+ "", "", "",
+	/* 45 */ "NEXT",
+ "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+	/* 60 */ "INSTR",
  "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
  "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+ "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+	/* 124 */ "BLOCK",
  "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
- "", "", "", "", "",
+ "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+ "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+ "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+ "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",
+ "", "", "", "", "", "", "", "", "", "", "", "", "",
 	/* 258 */ "INT",
 	/* 259 */ "REAL",
 	/* 260 */ "ID",
@@ -125,23 +145,66 @@ static YYCONST char *yytermname[] = {
 };
 
 struct yystate {
-	short cost[2];
+	short cost[10];
 	struct {
-		unsigned int yystmt:1;
+		unsigned int yyfinit:1;
+		unsigned int yybloco:1;
+		unsigned int yyparams:2;
+		unsigned int yyparam:1;
+		unsigned int yylist:2;
+		unsigned int yydecls:2;
+		unsigned int yytipo:2;
+		unsigned int yybase:1;
+		unsigned int yyexpr:1;
 	} rule;
 };
 
-static short yynts_0[] = { 0 };
+static short yynts_0[] = { yybloco_NT, yyparams_NT, 0 };
+static short yynts_1[] = { yyparam_NT, 0 };
+static short yynts_2[] = { yyparams_NT, yyparam_NT, 0 };
+static short yynts_3[] = { yylist_NT, yydecls_NT, 0 };
+static short yynts_4[] = { yydecls_NT, yyparam_NT, 0 };
+static short yynts_5[] = { 0 };
+static short yynts_6[] = { yytipo_NT, 0 };
+static short yynts_7[] = { yybase_NT, 0 };
+static short yynts_8[] = { yylist_NT, yybase_NT, 0 };
+static short yynts_9[] = { yyexpr_NT, 0 };
 
 static short *yynts[] = {
 	0,	/* 0 */
 	yynts_0,	/* 1 */
+	yynts_1,	/* 2 */
+	yynts_2,	/* 3 */
+	yynts_3,	/* 4 */
+	yynts_4,	/* 5 */
+	yynts_5,	/* 6 */
+	yynts_6,	/* 7 */
+	yynts_5,	/* 8 */
+	yynts_5,	/* 9 */
+	yynts_5,	/* 10 */
+	yynts_7,	/* 11 */
+	yynts_8,	/* 12 */
+	yynts_9,	/* 13 */
+	yynts_5,	/* 14 */
 };
 
 
 static YYCONST char *yystring[] = {
 /* 0 */	0,
-/* 1 */	"stmt: END",
+/* 1 */	"finit: ARGS(bloco,params)",
+/* 2 */	"params: param",
+/* 3 */	"params: NEXT(params,param)",
+/* 4 */	"bloco: BLOCK(list,decls)",
+/* 5 */	"decls: INSTR(decls,param)",
+/* 6 */	"decls: NIL",
+/* 7 */	"param: PARAM(tipo,ID)",
+/* 8 */	"tipo: INTEGER",
+/* 9 */	"tipo: STRING",
+/* 10 */	"tipo: NUMBER",
+/* 11 */	"list: base",
+/* 12 */	"list: INSTR(list,base)",
+/* 13 */	"base: expr",
+/* 14 */	"expr: STR",
 };
 
 #ifndef TRACE
@@ -153,24 +216,108 @@ static void yytrace(NODEPTR_TYPE p, int eruleno, int cost, int bestcost)
 }
 #endif
 
-static short yydecode_stmt[] = {
+static short yydecode_finit[] = {
 	0,
 	1,
 };
 
+static short yydecode_bloco[] = {
+	0,
+	4,
+};
+
+static short yydecode_params[] = {
+	0,
+	2,
+	3,
+};
+
+static short yydecode_param[] = {
+	0,
+	7,
+};
+
+static short yydecode_list[] = {
+	0,
+	11,
+	12,
+};
+
+static short yydecode_decls[] = {
+	0,
+	5,
+	6,
+};
+
+static short yydecode_tipo[] = {
+	0,
+	8,
+	9,
+	10,
+};
+
+static short yydecode_base[] = {
+	0,
+	13,
+};
+
+static short yydecode_expr[] = {
+	0,
+	14,
+};
+
 static int yyrule(void *state, int goalnt) {
-	if (goalnt < 1 || goalnt > 1)
+	if (goalnt < 1 || goalnt > 9)
 		PANIC("yyrule", "Bad goal nonterminal", goalnt);
 	if (!state)
 		return 0;
 	switch (goalnt) {
-	case yystmt_NT:	return yydecode_stmt[((struct yystate *)state)->rule.yystmt];
+	case yyfinit_NT:	return yydecode_finit[((struct yystate *)state)->rule.yyfinit];
+	case yybloco_NT:	return yydecode_bloco[((struct yystate *)state)->rule.yybloco];
+	case yyparams_NT:	return yydecode_params[((struct yystate *)state)->rule.yyparams];
+	case yyparam_NT:	return yydecode_param[((struct yystate *)state)->rule.yyparam];
+	case yylist_NT:	return yydecode_list[((struct yystate *)state)->rule.yylist];
+	case yydecls_NT:	return yydecode_decls[((struct yystate *)state)->rule.yydecls];
+	case yytipo_NT:	return yydecode_tipo[((struct yystate *)state)->rule.yytipo];
+	case yybase_NT:	return yydecode_base[((struct yystate *)state)->rule.yybase];
+	case yyexpr_NT:	return yydecode_expr[((struct yystate *)state)->rule.yyexpr];
 	default:
 		PANIC("yyrule", "Bad goal nonterminal", goalnt);
 		return 0;
 	}
 }
 
+static void yyclosure_param(NODEPTR_TYPE, int);
+static void yyclosure_base(NODEPTR_TYPE, int);
+static void yyclosure_expr(NODEPTR_TYPE, int);
+
+static void yyclosure_param(NODEPTR_TYPE a, int c) {
+	struct yystate *p = (struct yystate *)STATE_LABEL(a);
+	yytrace(a, 2, c + 0, p->cost[yyparams_NT]);
+	if (c + 0 < p->cost[yyparams_NT]) {
+		p->cost[yyparams_NT] = c + 0;
+		p->rule.yyparams = 1;
+	}
+}
+
+static void yyclosure_base(NODEPTR_TYPE a, int c) {
+	struct yystate *p = (struct yystate *)STATE_LABEL(a);
+	yytrace(a, 11, c + 0, p->cost[yylist_NT]);
+	if (c + 0 < p->cost[yylist_NT]) {
+		p->cost[yylist_NT] = c + 0;
+		p->rule.yylist = 1;
+	}
+}
+
+static void yyclosure_expr(NODEPTR_TYPE a, int c) {
+	struct yystate *p = (struct yystate *)STATE_LABEL(a);
+	yytrace(a, 13, c + 1, p->cost[yybase_NT]);
+	if (c + 1 < p->cost[yybase_NT]) {
+		p->cost[yybase_NT] = c + 1;
+		p->rule.yybase = 1;
+		yyclosure_base(a, c + 1);
+	}
+}
 
 static void yylabel(NODEPTR_TYPE a, NODEPTR_TYPE u) {
 	int c;
@@ -181,14 +328,65 @@ static void yylabel(NODEPTR_TYPE a, NODEPTR_TYPE u) {
 	STATE_LABEL(a) = p = (struct yystate *)malloc(sizeof *p);
 	memset(p, 0, sizeof *p);
 	p->cost[1] =
+	p->cost[2] =
+	p->cost[3] =
+	p->cost[4] =
+	p->cost[5] =
+	p->cost[6] =
+	p->cost[7] =
+	p->cost[8] =
+	p->cost[9] =
 		0x7fff;
 	switch (OP_LABEL(a)) {
-	case 59: /* END */
-		/* stmt: END */
-		yytrace(a, 1, 1 + 0, p->cost[yystmt_NT]);
-		if (1 + 0 < p->cost[yystmt_NT]) {
-			p->cost[yystmt_NT] = 1 + 0;
-			p->rule.yystmt = 1;
+	case 40: /* ARGS */
+		yylabel(LEFT_CHILD(a),a);
+		yylabel(RIGHT_CHILD(a),a);
+		/* finit: ARGS(bloco,params) */
+		c = ((struct yystate *)STATE_LABEL(LEFT_CHILD(a)))->cost[yybloco_NT] + ((struct yystate *)STATE_LABEL(RIGHT_CHILD(a)))->cost[yyparams_NT] + 0;
+		yytrace(a, 1, c + 0, p->cost[yyfinit_NT]);
+		if (c + 0 < p->cost[yyfinit_NT]) {
+			p->cost[yyfinit_NT] = c + 0;
+			p->rule.yyfinit = 1;
+		}
+		break;
+	case 44: /* NEXT */
+		yylabel(LEFT_CHILD(a),a);
+		yylabel(RIGHT_CHILD(a),a);
+		/* params: NEXT(params,param) */
+		c = ((struct yystate *)STATE_LABEL(LEFT_CHILD(a)))->cost[yyparams_NT] + ((struct yystate *)STATE_LABEL(RIGHT_CHILD(a)))->cost[yyparam_NT] + 0;
+		yytrace(a, 3, c + 0, p->cost[yyparams_NT]);
+		if (c + 0 < p->cost[yyparams_NT]) {
+			p->cost[yyparams_NT] = c + 0;
+			p->rule.yyparams = 2;
+		}
+		break;
+	case 59: /* INSTR */
+		yylabel(LEFT_CHILD(a),a);
+		yylabel(RIGHT_CHILD(a),a);
+		/* decls: INSTR(decls,param) */
+		c = ((struct yystate *)STATE_LABEL(LEFT_CHILD(a)))->cost[yydecls_NT] + ((struct yystate *)STATE_LABEL(RIGHT_CHILD(a)))->cost[yyparam_NT] + 0;
+		yytrace(a, 5, c + 0, p->cost[yydecls_NT]);
+		if (c + 0 < p->cost[yydecls_NT]) {
+			p->cost[yydecls_NT] = c + 0;
+			p->rule.yydecls = 1;
+		}
+		/* list: INSTR(list,base) */
+		c = ((struct yystate *)STATE_LABEL(LEFT_CHILD(a)))->cost[yylist_NT] + ((struct yystate *)STATE_LABEL(RIGHT_CHILD(a)))->cost[yybase_NT] + 0;
+		yytrace(a, 12, c + 0, p->cost[yylist_NT]);
+		if (c + 0 < p->cost[yylist_NT]) {
+			p->cost[yylist_NT] = c + 0;
+			p->rule.yylist = 2;
+		}
+		break;
+	case 123: /* BLOCK */
+		yylabel(LEFT_CHILD(a),a);
+		yylabel(RIGHT_CHILD(a),a);
+		/* bloco: BLOCK(list,decls) */
+		c = ((struct yystate *)STATE_LABEL(LEFT_CHILD(a)))->cost[yylist_NT] + ((struct yystate *)STATE_LABEL(RIGHT_CHILD(a)))->cost[yydecls_NT] + 0;
+		yytrace(a, 4, c + 0, p->cost[yybloco_NT]);
+		if (c + 0 < p->cost[yybloco_NT]) {
+			p->cost[yybloco_NT] = c + 0;
+			p->rule.yybloco = 1;
 		}
 		break;
 	case 257: /* INT */
@@ -198,7 +396,14 @@ static void yylabel(NODEPTR_TYPE a, NODEPTR_TYPE u) {
 	case 259: /* ID */
 		return;
 	case 260: /* STR */
-		return;
+		/* expr: STR */
+		yytrace(a, 14, 1 + 0, p->cost[yyexpr_NT]);
+		if (1 + 0 < p->cost[yyexpr_NT]) {
+			p->cost[yyexpr_NT] = 1 + 0;
+			p->rule.yyexpr = 1;
+			yyclosure_expr(a, 1 + 0);
+		}
+		break;
 	case 261: /* DO */
 		return;
 	case 262: /* WHILE */
@@ -224,11 +429,29 @@ static void yylabel(NODEPTR_TYPE a, NODEPTR_TYPE u) {
 	case 272: /* VOID */
 		return;
 	case 273: /* INTEGER */
-		return;
+		/* tipo: INTEGER */
+		yytrace(a, 8, 0 + 0, p->cost[yytipo_NT]);
+		if (0 + 0 < p->cost[yytipo_NT]) {
+			p->cost[yytipo_NT] = 0 + 0;
+			p->rule.yytipo = 1;
+		}
+		break;
 	case 274: /* STRING */
-		return;
+		/* tipo: STRING */
+		yytrace(a, 9, 0 + 0, p->cost[yytipo_NT]);
+		if (0 + 0 < p->cost[yytipo_NT]) {
+			p->cost[yytipo_NT] = 0 + 0;
+			p->rule.yytipo = 2;
+		}
+		break;
 	case 275: /* NUMBER */
-		return;
+		/* tipo: NUMBER */
+		yytrace(a, 10, 0 + 0, p->cost[yytipo_NT]);
+		if (0 + 0 < p->cost[yytipo_NT]) {
+			p->cost[yytipo_NT] = 0 + 0;
+			p->rule.yytipo = 3;
+		}
+		break;
 	case 276: /* CONST */
 		return;
 	case 277: /* PUBLIC */
@@ -268,9 +491,28 @@ static void yylabel(NODEPTR_TYPE a, NODEPTR_TYPE u) {
 	case 294: /* START */
 		return;
 	case 295: /* PARAM */
-		return;
+		yylabel(LEFT_CHILD(a),a);
+		yylabel(RIGHT_CHILD(a),a);
+		if (	/* param: PARAM(tipo,ID) */
+			OP_LABEL(RIGHT_CHILD(a)) == 259 /* ID */
+		) {
+			c = ((struct yystate *)STATE_LABEL(LEFT_CHILD(a)))->cost[yytipo_NT] + 0;
+			yytrace(a, 7, c + 0, p->cost[yyparam_NT]);
+			if (c + 0 < p->cost[yyparam_NT]) {
+				p->cost[yyparam_NT] = c + 0;
+				p->rule.yyparam = 1;
+				yyclosure_param(a, c + 0);
+			}
+		}
+		break;
 	case 296: /* NIL */
-		return;
+		/* decls: NIL */
+		yytrace(a, 6, 0 + 0, p->cost[yydecls_NT]);
+		if (0 + 0 < p->cost[yydecls_NT]) {
+			p->cost[yydecls_NT] = 0 + 0;
+			p->rule.yydecls = 2;
+		}
+		break;
 	default:
 		PANIC("yylabel", "Bad terminal", OP_LABEL(a));
 	}
@@ -282,7 +524,27 @@ static void yykids(NODEPTR_TYPE p, int eruleno, NODEPTR_TYPE kids[]) {
 	if (!kids)
 		PANIC("yykids", "Null kids in", OP_LABEL(p));
 	switch (eruleno) {
-	case 1: /* stmt: END */
+	case 12: /* list: INSTR(list,base) */
+	case 5: /* decls: INSTR(decls,param) */
+	case 4: /* bloco: BLOCK(list,decls) */
+	case 3: /* params: NEXT(params,param) */
+	case 1: /* finit: ARGS(bloco,params) */
+		kids[0] = LEFT_CHILD(p);
+		kids[1] = RIGHT_CHILD(p);
+		break;
+	case 13: /* base: expr */
+	case 11: /* list: base */
+	case 2: /* params: param */
+		kids[0] = p;
+		break;
+	case 14: /* expr: STR */
+	case 10: /* tipo: NUMBER */
+	case 9: /* tipo: STRING */
+	case 8: /* tipo: INTEGER */
+	case 6: /* decls: NIL */
+		break;
+	case 7: /* param: PARAM(tipo,ID) */
+		kids[0] = LEFT_CHILD(p);
 		break;
 	default:
 		PANIC("yykids", "Bad rule number", eruleno);
@@ -293,16 +555,68 @@ static void yyreduce(NODEPTR_TYPE p, int goalnt)
 {
   int eruleno = yyrule(STATE_LABEL(p), goalnt);
   short *nts = yynts[eruleno];
-  NODEPTR_TYPE kids[0];
+  NODEPTR_TYPE kids[2];
   int i;
 
   for (yykids(p, eruleno, kids), i = 0; nts[i]; i++)
     yyreduce(kids[i], nts[i]);
 
   switch(eruleno) {
-	case 1: /* stmt: END */
-#line 40 "diy.brg"
-{	}
+	case 1: /* finit: ARGS(bloco,params) */
+#line 41 "diy.brg"
+
+		break;
+	case 2: /* params: param */
+#line 43 "diy.brg"
+
+		break;
+	case 3: /* params: NEXT(params,param) */
+#line 44 "diy.brg"
+
+		break;
+	case 4: /* bloco: BLOCK(list,decls) */
+#line 46 "diy.brg"
+
+		break;
+	case 5: /* decls: INSTR(decls,param) */
+#line 48 "diy.brg"
+
+		break;
+	case 6: /* decls: NIL */
+#line 49 "diy.brg"
+
+		break;
+	case 7: /* param: PARAM(tipo,ID) */
+#line 51 "diy.brg"
+
+		break;
+	case 8: /* tipo: INTEGER */
+#line 53 "diy.brg"
+
+		break;
+	case 9: /* tipo: STRING */
+#line 54 "diy.brg"
+
+		break;
+	case 10: /* tipo: NUMBER */
+#line 55 "diy.brg"
+
+		break;
+	case 11: /* list: base */
+#line 57 "diy.brg"
+
+		break;
+	case 12: /* list: INSTR(list,base) */
+#line 58 "diy.brg"
+
+		break;
+	case 13: /* base: expr */
+#line 60 "diy.brg"
+{fprintf(outfp, pfTRASH, pfWORD); }
+		break;
+	case 14: /* expr: STR */
+#line 62 "diy.brg"
+{	 lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl)); outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
 		break;
 	default: break;
   }
@@ -311,7 +625,7 @@ static void yyreduce(NODEPTR_TYPE p, int goalnt)
 int yyselect(NODEPTR_TYPE p)
 {
 	yylabel(p,p);
-	if (((struct yystate *)STATE_LABEL(p))->rule.yystmt == 0) {
+	if (((struct yystate *)STATE_LABEL(p))->rule.yyfinit == 0) {
 		fprintf(stderr, "No match for start symbol (%s).\n", yyntname[1]);
 		return 1;
 	}
@@ -320,7 +634,7 @@ int yyselect(NODEPTR_TYPE p)
 }
 
 
-#line 41 "diy.brg"
+#line 64 "diy.brg"
 
 #include "y.tab.h"
 extern void yyerror(const char*);
