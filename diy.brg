@@ -35,7 +35,9 @@ static char *mkfunc(char *s) {
   return buf;
 }
 %}
-%term INSTR=';' BLOCK='{' ARGB='(' NEXT=',' ASSIGN='='
+%term INSTR=';' BLOCK='{' ARGB='(' NEXT=','
+%term FACTORIAL='!' ADD='+' SUB='-' MUL='*' DIV='/' MOD='%'
+%term LT='<' GT='>' LOGIC_EQUAL='=' AND='&' OR='|' LOGIC_NOT='~'
 %include "y.tab.h"
 %%
 
@@ -63,19 +65,51 @@ base: expr 1 {fprintf(outfp, pfTRASH, pfWORD); }
 
 lval: LOCAL 1 {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 
+%!FIXME function return types
+expr: CALL(ID, arguments) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
-expr: CALL(ID, arguments) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place)));}
-
-
-arguments: ARGS(NIL, expr) {p->place = 4; }
-arguments: ARGS(arguments, expr) {p->place = LEFT_CHILD(p)->place + 4;}
+expr: CALL(ID, VOID) 1 {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s)); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
 
-expr:	STR	1	{	 lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl)); 
+arguments: ARGS(NIL, expr) {p->place = RIGHT_CHILD(p)->place; }
+arguments: ARGS(arguments, expr) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place;}
+
+expr: iexpr {p->place = 4;}
+expr: sexpr {p->place = 4;}
+
+sexpr:	STR	1	{	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl)); 
 					outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
 
-expr: INT 1 {fprintf(outfp, pfIMM, p->value.i);}
-expr: ATR(expr, lval) 1 {fprintf(outfp, pfSTORE);}
+iexpr: INT 1 {fprintf(outfp, pfIMM, p->value.i);}
+
+iassign: iexpr 1 {fprintf(outfp,pfDUP);}
+
+%! expressions relating to integers
+iexpr: ATR(iassign, lval) 1 {fprintf(outfp, pfSTORE);}
+iexpr: ADD(iexpr, iexpr) 1 {fprintf(outfp, pfADD);}
+iexpr: SUB(iexpr, iexpr) 1 {fprintf(outfp, pfSUB);}
+iexpr: DIV(iexpr, iexpr) 1 {fprintf(outfp, pfDIV);}
+iexpr: MOD(iexpr, iexpr) 1 {fprintf(outfp, pfMOD);}
+iexpr: MUL(iexpr, iexpr) 1 {fprintf(outfp, pfMUL);}
+iexpr: LT(iexpr, iexpr) 1 {fprintf(outfp, pfLT);}
+iexpr: GT(iexpr, iexpr) 1 {fprintf(outfp, pfGT);}
+iexpr: GE(iexpr, iexpr) 1 {fprintf(outfp, pfGE);}
+iexpr: LE(iexpr, iexpr) 1 {fprintf(outfp, pfLE);}
+iexpr: NE(iexpr, iexpr) 1 {fprintf(outfp, pfNE);}
+iexpr: LOGIC_EQUAL(iexpr, iexpr) 1 {fprintf(outfp, pfEQ);}
+iexpr: AND(iexpr, iexpr) 1 {fprintf(outfp, pfAND);}
+iexpr: OR (iexpr, iexpr) 1 {fprintf(outfp, pfOR);}
+iexpr: FACTORIAL(iexpr) 1 {/*fprintf(outfp)*/ /*FIXME*/}
+iexpr: LOGIC_NOT(iexpr) 1 {fprintf(outfp, pfNOT);}
+iexpr: UMINUS(iexpr) 1 {fprintf(outfp, pfNEG);}
+iexpr: PTR(lval) 1 {fprintf(outfp, pfLOAD);}
+
+
+%!increment and decrement integer only
+iexpr: INCR(lval) 1 {fprintf(outfp, pfDUP pfINCR pfLOAD, 1);}
+iexpr: DECR(lval) 1 {fprintf(outfp, pfDUP pfDECR pfLOAD, 1);}
+iexpr: POSINC(lval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfINCR, 1);}
+iexpr: POSDEC(lval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfDECR, 1);}
 
 %%
 #include "y.tab.h"

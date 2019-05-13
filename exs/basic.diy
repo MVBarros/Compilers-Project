@@ -1,4 +1,5 @@
 public void printi(integer i)
+public void println()
 
 public integer entry (integer argc, string *argv, string *envp) {
 	integer i;
@@ -12,17 +13,23 @@ public integer entry (integer argc, string *argv, string *envp) {
 	j := 5;
 
 
-	k = i + j;
+	k := i + j;
 	printi(k);
-	i = j = k;
+	println();
+	i := j := k;
 	printi(i);
+	println();
 	printi(j);
+	println();
 	k++;
 	printi(k);
+	println();
 	printi(k++);
+	println();
 	printi(++k);
-	k := 1.0;
+==	k := 1.0;
+	println();
 	printi(k);
-
+	println();
 	entry := 0;
 };
