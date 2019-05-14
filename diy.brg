@@ -34,6 +34,9 @@ static char *mkfunc(char *s) {
   strcat(buf, s);
   return buf;
 }
+
+int isInt(Node* p) {return IDfind(LEFT_CHILD(p)->value.s, NULL) == 1 ? 1 : MAX_COST;}
+
 %}
 %term INSTR=';' BLOCK='{' ARGB='(' NEXT=','
 %term FACTORIAL='!' ADD='+' SUB='-' MUL='*' DIV='/' MOD='%'
@@ -57,13 +60,13 @@ tipo: INTEGER
 tipo: STRING
 tipo: NUMBER
 
+%! one or more complete expressions
 list: base
 list: LIST(list, base)
 
-base: expr 1 {fprintf(outfp, pfTRASH, pfWORD); }
+%!end of an expression is a base
+base: expr 1 {fprintf(outfp, pfTRASH, (int)p->place); }
 
-
-lval: LOCAL 1 {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 
 %!FIXME function return types
 expr: CALL(ID, arguments) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
@@ -71,20 +74,22 @@ expr: CALL(ID, arguments) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_C
 expr: CALL(ID, VOID) 1 {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s)); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
 
-arguments: ARGS(NIL, expr) {p->place = RIGHT_CHILD(p)->place; }
-arguments: ARGS(arguments, expr) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place;}
-
+%!an expression is any type of expression
 expr: iexpr {p->place = 4;}
 expr: sexpr {p->place = 4;}
+expr: rexpr {p->place = 8;}
 
-sexpr:	STR	1	{	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl)); 
+%!lval is an expression on the left side of an assignment
+lval: LOCAL 1 {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
+
+
+%! expressions relating to strings
+sexpr:	STR	1	{	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl));
 					outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
 
-iexpr: INT 1 {fprintf(outfp, pfIMM, p->value.i);}
-
-iassign: iexpr 1 {fprintf(outfp,pfDUP);}
-
 %! expressions relating to integers
+iassign: iexpr 1 {fprintf(outfp, pfDUP);}
+iexpr: INT 1 {fprintf(outfp, pfIMM, p->value.i);}
 iexpr: ATR(iassign, lval) 1 {fprintf(outfp, pfSTORE);}
 iexpr: ADD(iexpr, iexpr) 1 {fprintf(outfp, pfADD);}
 iexpr: SUB(iexpr, iexpr) 1 {fprintf(outfp, pfSUB);}
@@ -102,14 +107,29 @@ iexpr: OR (iexpr, iexpr) 1 {fprintf(outfp, pfOR);}
 iexpr: FACTORIAL(iexpr) 1 {/*fprintf(outfp)*/ /*FIXME*/}
 iexpr: LOGIC_NOT(iexpr) 1 {fprintf(outfp, pfNOT);}
 iexpr: UMINUS(iexpr) 1 {fprintf(outfp, pfNEG);}
-iexpr: PTR(lval) 1 {fprintf(outfp, pfLOAD);}
 
+%!integer := <real number>
+iexpr: rexpr 1 {fprintf(outfp, pfD2I);}
 
 %!increment and decrement integer only
 iexpr: INCR(lval) 1 {fprintf(outfp, pfDUP pfINCR pfLOAD, 1);}
 iexpr: DECR(lval) 1 {fprintf(outfp, pfDUP pfDECR pfLOAD, 1);}
 iexpr: POSINC(lval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfINCR, 1);}
 iexpr: POSDEC(lval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfDECR, 1);}
+
+%! assign integers tp IDS
+iexpr: PTR(LOCAL) 1 {fprintf(outfp, pfLOCV, LEFT_CHILD(p)->value.i);}
+iexpr: PTR(ID) isInt {fprintf(outfp, pfADDR pfLOAD, LEFT_CHILD(p)->value.s);}
+
+%! expressions relating to real numbers
+rexpr: REAL 1 {lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL pfDOUBLE, mklbl(lbl), p->value.r);
+					fprintf(outfp, pfTEXT pfADDR pfLOAD2, mklbl(lbl));}
+
+
+%!Arguments of function calls
+arguments: ARGS(NIL, expr) {p->place = RIGHT_CHILD(p)->place; }
+arguments: ARGS(arguments, expr) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place;}
+
 
 %%
 #include "y.tab.h"
@@ -137,18 +157,14 @@ void function(int pub, Node *type, char *name, Node *body)
 		int fwd = IDfind(name, &par);
 		if (fwd > 40) yyerror("duplicate function");
 		else {
-		IDreplace(fwd+40, name, par);
-
-		fflush(stdout);
+			IDreplace(fwd+40, name, par);
+			fflush(stdout);
   		fprintf(outfp, pfTEXT pfALIGN pfGLOBL pfLABEL pfENTER, mkfunc(name), pfFUNC, mkfunc(name), - localPos * (pfWORD/4));
   		yyselect(body);
   		fprintf(outfp, pfLEAVE pfRET); /* just in case ... */
-		freeNode(body);
-		
-		for (int i = 0; i < extcnt; i++)
+			freeNode(body);
+			for (int i = 0; i < extcnt; i++)
 		    if (extrns[i] && strcmp(extrns[i], mkfunc(name)) == 0) extrns[i] = 0;
-
-
 		}
 	}
 	else {
@@ -158,4 +174,29 @@ void function(int pub, Node *type, char *name, Node *body)
   		strcat(buffer, name);
 		extrns[extcnt++] = buffer;
 	}
+}
+
+
+void declare(int pub, int cnst, Node *type, char *name, Node *value)
+{
+  int typ;
+  if (!value) {
+    if (!pub && cnst) yyerror("local constants must be initialised");
+
+    //if (pub && !cnst) {
+    //	variable is extern
+    //	fprintf(outfp, pfEXTRN, name);
+    //if(!pub && !cnst) {
+
+    //}
+    //}
+    //}
+
+    return;
+  }
+  if (value->attrib = INT && value->value.i == 0 && type->value.i > 10)
+  	return; /* NULL pointer */
+  if ((typ = value->info) % 10 > 5) typ -= 5;
+  if (type->value.i != typ)
+    yyerror("wrong types in initialization");
 }

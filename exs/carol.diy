@@ -1,0 +1,17 @@
+public void prints(string s)
+public void println()
+public void printi(integer i)
+public integer entry (integer argc, string *argv, string *envp) {
+  integer a;
+  a := 2;
+  printi(a);
+  println();
+  a := - 2;
+  printi(a);
+  println();
+  a := a;
+  printi(a);
+  println();
+  prints("olá pessoal!\n")
+  entry := 0
+};

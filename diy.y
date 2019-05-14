@@ -16,6 +16,8 @@ int nostring(Node *arg1, Node *arg2);
 int intonly(Node *arg, int);
 int noassign(Node *arg1, Node *arg2);
 extern void function(int pub, Node *type, char *name, Node *body);
+extern void declare(int pub, int cnst, Node *type, char *name, Node *value);
+
 
 extern void externs();
 
@@ -115,7 +117,7 @@ decls	:                       { $$ = /*0*/ nilNode(NONE); }
 	;
 
 param	: tipo ID               { $$ = binNode(PARAM, $1, strNode(ID, $2));
-                                  
+
                                   if (IDlevel() == 1) {
                                   	fpar[++fpar[0]] = $1->value.i;
                                   	IDnew($1->value.i, $2, globalPos);
@@ -228,19 +230,7 @@ char **yynames =
 		 0;
 #endif
 
-void declare(int pub, int cnst, Node *type, char *name, Node *value)
-{
-  int typ;
-  if (!value) {
-    if (!pub && cnst) yyerror("local constants must be initialised");
-    return;
-  }
-  if (value->attrib = INT && value->value.i == 0 && type->value.i > 10)
-  	return; /* NULL pointer */
-  if ((typ = value->info) % 10 > 5) typ -= 5;
-  if (type->value.i != typ)
-    yyerror("wrong types in initialization");
-}
+
 void enter(int pub, int typ, char *name) {
 	globalPos = 8;
 	localPos = 0;

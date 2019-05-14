@@ -10,11 +10,20 @@ public integer entry (integer argc, string *argv, string *envp) {
 	number b;
 
 	i := 3;
+	printi(i);
+	println();
 	j := 5;
-
+	printi(j);
+	println();
 
 	k := i + j;
 	printi(k);
+	println();
+	printi(i := k);
+	println();
+	printi(i + 4);
+	println();
+	printi(i * 2);
 	println();
 	i := j := k;
 	printi(i);
@@ -27,7 +36,8 @@ public integer entry (integer argc, string *argv, string *envp) {
 	printi(k++);
 	println();
 	printi(++k);
-==	k := 1.0;
+	k := 19.0;
+
 	println();
 	printi(k);
 	println();
