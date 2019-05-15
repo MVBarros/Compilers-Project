@@ -1,17 +1,16 @@
-public void prints(string s)
-public void println()
 public void printi(integer i)
+public void println()
+
+public integer f5(integer a, integer b, integer c, number d) {
+  f5 := 5;
+};
+
 public integer entry (integer argc, string *argv, string *envp) {
-  integer a;
-  a := 2;
-  printi(a);
+  integer k;
+
+  k := f5(1, 2, 3, 4.0);
+  printi(k);
   println();
-  a := - 2;
-  printi(a);
-  println();
-  a := a;
-  printi(a);
-  println();
-  prints("olá pessoal!\n")
-  entry := 0
+
+  entry := 0;
 };

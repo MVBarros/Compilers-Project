@@ -1,0 +1,17 @@
+public void println()
+public void prints(string i)
+public void printi(integer i)
+
+public integer entry (integer argc, string *argv, string *envp) {
+	integer i;
+	i := 3;
+	if (i > 1 & i < 5) then {
+		prints("in if\n");
+	}
+	else {
+		prints("in else\n");
+	}
+
+	prints("not in if\n");
+	entry := 0;
+};

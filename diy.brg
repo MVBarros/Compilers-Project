@@ -67,8 +67,8 @@ int isIntPointer(Node* p) {return p->info == 11 ? 1 : MAX_COST;}
 %include "y.tab.h"
 %%
 
-finit: ARGB(bloco, params) 1 {if (functionReturnType == 1 || functionReturnType == 2)fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8); else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}
-finit: ARGB(bloco, NIL) 1 {if (functionReturnType == 1 || functionReturnType == 2) fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8); else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}
+finit: ARGB(bloco, params) 1 {if (functionReturnType != 3)fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8); else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}
+finit: ARGB(bloco, NIL) 1 {if (functionReturnType != 3) fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8); else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}
 
 params: param
 params:NEXT(params, param)
@@ -88,9 +88,22 @@ tipo: NUMBER
 list: base
 list: LIST(list, base)
 
+%! simple if (no else): uses only one label
+if: IF(cond, stmt) {fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
+cond: expr 1 {p->place = ++lbl; fprintf(outfp, pfJZ, mklbl(p->place));}
+
+%! if-else
+ifelse:	ELSE(cond2,stmt)	1 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
+cond2:	IF(cond,stmt)	1 { p->place = ++lbl; fprintf(outfp, pfJMP pfLABEL,
+mklbl(p->place), mklbl(LEFT_CHILD(p)->place)); }
+
+stmt: base
+
 %!end of an expression is a base
 base: expr 1 {fprintf(outfp, pfTRASH, (int)p->place); }
-
+base: if
+base: ifelse
+base: bloco
 
 
 %!an expression is any type of expression
@@ -106,7 +119,6 @@ expr: CALL(ID, VOID) 1 {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->valu
 %!lval is an expression on the left side of an assignment
 lval: LOCAL 1 {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 lval: ID 1 {fprintf(outfp, pfADDR, p->value.s);}
-
 lvec: lval 1 {fprintf(outfp, pfLOAD);}
 lval: INDEX(lvec, expr) 1 { fprintf(outfp, pfIMM pfMUL pfADD,
 							LEFT_CHILD(p)->info == 13 ? 8 : 4);}
@@ -155,7 +167,7 @@ iexpr: LOGIC_EQUAL(iexpr, iexpr) 1 {fprintf(outfp, pfEQ);}
 iexpr: AND(iexpr, iexpr) 1 {fprintf(outfp, pfAND);}
 iexpr: OR (iexpr, iexpr) 1 {fprintf(outfp, pfOR);}
 iexpr: FACTORIAL(iexpr) 1 {/*fprintf(outfp)*/ /*FIXME*/}
-iexpr: LOGIC_NOT(iexpr) 1 {fprintf(outfp, pfNOT);}
+iexpr: NOT(iexpr) 1 {fprintf(outfp, pfIMM pfEQ, 0);}
 iexpr: UMINUS(iexpr) 1 {fprintf(outfp, pfNEG);}
 %!iexpr: REF(LOCAL) 1 {fprintf(outfp, pfLOAD)}
 
@@ -170,14 +182,8 @@ iexpr: POSDEC(lval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfDECR, 1);}
 
 
 %! assign integers to IDS
-iexpr: PTR(lval) isInt {
-if (LEFT_CHILD(p)->place == 2) {
-	fprintf(outfp, pfLDCHR);
-}
-else {
-fprintf(outfp, pfLOAD);
-}
-}
+iexpr: PTR(lval) isInt {if (LEFT_CHILD(p)->place == 2) { fprintf(outfp, pfLDCHR);}
+                        else {fprintf(outfp, pfLOAD);}}
 
 
 
