@@ -7,6 +7,7 @@ public string givehello() {
 };
 
 public integer entry (integer argc, string *argv, string *envp) {
+	integer d;
 	string a;
 	string b;
 	string c;
@@ -19,6 +20,7 @@ public integer entry (integer argc, string *argv, string *envp) {
 	prints("c: ");
 	prints(c);
 	prints("b: ");
+	==b[0] := 51;
 	prints(b);
 	a := "agg";
 	b := "bcc";
@@ -29,5 +31,9 @@ public integer entry (integer argc, string *argv, string *envp) {
 	printi(a > b);
 	println();
 	prints("hello world\n");
+	d := 81;
+	a := &d;
+	prints(a);
+	println();
 	entry := 0;
 };

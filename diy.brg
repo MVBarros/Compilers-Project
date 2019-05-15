@@ -56,10 +56,14 @@ int isString(Node* p) {return p->info == 2 ? 1 : MAX_COST;}
 int isStringFunction(Node* p) {return p->info == 2 ? 1 : MAX_COST;}
 int isStringLval(Node* p) {return RIGHT_CHILD(p)->info == 2 ? 1 : MAX_COST;}
 
+
+int isIntPointer(Node* p) {return p->info == 11 ? 1 : MAX_COST;}
+
 %}
 %term INSTR=';' BLOCK='{' ARGB='(' NEXT=','
 %term FACTORIAL='!' ADD='+' SUB='-' MUL='*' DIV='/' MOD='%'
 %term LT='<' GT='>' LOGIC_EQUAL='=' AND='&' OR='|' LOGIC_NOT='~'
+%term INDEX='['
 %include "y.tab.h"
 %%
 
@@ -102,13 +106,18 @@ expr: CALL(ID, VOID) 1 {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->valu
 
 %!lval is an expression on the left side of an assignment
 lval: LOCAL 1 {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
+lval: ID 1 {fprintf(outfp, pfADDR, p->value.s);}
 
+lvec: lval 1 {fprintf(outfp, pfLOAD);}
+lval: INDEX(lvec, expr) 1 { fprintf(outfp, pfIMM pfMUL pfADD,
+							LEFT_CHILD(p)->info == 13 ? 8 : 4);}
 
 %! expressions relating to strings
 sexpr:	STR	1	{	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl));
 					outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
 sexpr: PTR(LOCAL) isString {fprintf(outfp, pfLOCV, LEFT_CHILD(p)->value.i);}
 sassign: sexpr 1 {fprintf(outfp, pfDUP);}
+sassign: iptrexpr 1 {fprintf(outfp, pfDUP);}
 %!sassign: iexpr 1 {fprintf(outfp, pfDUP); /*can assign integer to strings*/}
 sexpr: ATR(sassign, lval) isStringLval {fprintf(outfp, pfSTORE);}
 
@@ -149,6 +158,7 @@ iexpr: OR (iexpr, iexpr) 1 {fprintf(outfp, pfOR);}
 iexpr: FACTORIAL(iexpr) 1 {/*fprintf(outfp)*/ /*FIXME*/}
 iexpr: LOGIC_NOT(iexpr) 1 {fprintf(outfp, pfNOT);}
 iexpr: UMINUS(iexpr) 1 {fprintf(outfp, pfNEG);}
+%!iexpr: REF(LOCAL) 1 {fprintf(outfp, pfLOAD)}
 
 %!integer := <real number>
 iexpr: rexpr 3 {fprintf(outfp, pfD2I);}
@@ -177,6 +187,9 @@ iexpr: GE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfGE, 0);}
 iexpr: LE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfLE, 0);}
 iexpr: LOGIC_EQUAL(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfEQ, 0);}
 iexpr: NE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfNE, 0);}
+
+
+iptrexpr: REF(LOCAL) isIntPointer {fprintf(outfp, pfLOCAL, LEFT_CHILD(p)->value.i);}
 
 
 %! expressions relating to real numbers
