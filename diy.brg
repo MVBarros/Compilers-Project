@@ -49,9 +49,12 @@ int isIntLval(Node* p) {return RIGHT_CHILD(p)->info == 1 ? 1 : MAX_COST;}
 int isRealFunction(Node* p) {return p->info == 3 ? 1 : MAX_COST;}
 /*use to determine if LOCAL or ID is int*/
 int isReal(Node* p) {return p->info == 3 ? 1 : MAX_COST;}
-
 /*use to determine if LVAL of ATR is Real*/
 int isRealLval(Node* p) {return RIGHT_CHILD(p)->info == 3 ? 1 : MAX_COST;}
+
+int isString(Node* p) {return p->info == 2 ? 1 : MAX_COST;}
+int isStringFunction(Node* p) {return p->info == 2 ? 1 : MAX_COST;}
+int isStringLval(Node* p) {return RIGHT_CHILD(p)->info == 2 ? 1 : MAX_COST;}
 
 %}
 %term INSTR=';' BLOCK='{' ARGB='(' NEXT=','
@@ -60,8 +63,8 @@ int isRealLval(Node* p) {return RIGHT_CHILD(p)->info == 3 ? 1 : MAX_COST;}
 %include "y.tab.h"
 %%
 
-finit: ARGB(bloco, params) 1 {if (functionReturnType == 1)fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8); if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}
-finit: ARGB(bloco, NIL) 1 {if (functionReturnType == 1) fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8); if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}
+finit: ARGB(bloco, params) 1 {if (functionReturnType == 1 || functionReturnType == 2)fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8); else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}
+finit: ARGB(bloco, NIL) 1 {if (functionReturnType == 1 || functionReturnType == 2) fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8); else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}
 
 params: param
 params:NEXT(params, param)
@@ -104,6 +107,26 @@ lval: LOCAL 1 {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 %! expressions relating to strings
 sexpr:	STR	1	{	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl));
 					outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
+sexpr: PTR(LOCAL) isString {fprintf(outfp, pfLOCV, LEFT_CHILD(p)->value.i);}
+sassign: sexpr 1 {fprintf(outfp, pfDUP);}
+%!sassign: iexpr 1 {fprintf(outfp, pfDUP); /*can assign integer to strings*/}
+sexpr: ATR(sassign, lval) isStringLval {fprintf(outfp, pfSTORE);}
+
+sexpr: CALL(ID, arguments) isStringFunction {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+
+sexpr: CALL(ID, VOID) isStringFunction {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s)); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+
+scmp: sexpr {fprintf(outfp, pfLOAD);}
+
+iexpr: LT(scmp, scmp) 1 {fprintf(outfp, pfLT);}
+iexpr: GT(scmp, scmp) 1 {fprintf(outfp, pfGT);}
+iexpr: GE(scmp, scmp) 1 {fprintf(outfp, pfGE);}
+iexpr: LE(scmp, scmp) 1 {fprintf(outfp, pfLE);}
+iexpr: NE(scmp, scmp) 1 {fprintf(outfp, pfNE);}
+iexpr: LOGIC_EQUAL(scmp, scmp) 1 {fprintf(outfp, pfEQ);}
+iexpr: AND(scmp, scmp) 1 {fprintf(outfp, pfAND);}
+iexpr: OR (scmp, scmp) 1 {fprintf(outfp, pfOR);}
+
 
 
 %! expressions relating to integers
@@ -146,6 +169,16 @@ iexpr: CALL(ID, arguments) isIntFunction {fprintf(outfp, pfCALL pfTRASH pfPUSH, 
 iexpr: CALL(ID, VOID) isIntFunction {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s)); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
 
+
+%! comparisons between real expressions return int
+iexpr: LT(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfLT, 0);}
+iexpr: GT(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfGT, 0);}
+iexpr: GE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfGE, 0);}
+iexpr: LE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfLE, 0);}
+iexpr: LOGIC_EQUAL(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfEQ, 0);}
+iexpr: NE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfNE, 0);}
+
+
 %! expressions relating to real numbers
 rexpr: ATR(rassign, lval) isRealLval {fprintf(outfp, pfSTORE2);}
 rassign: rexpr 1 {fprintf(outfp, pfDUP2);}
@@ -157,14 +190,6 @@ rexpr: SUB(rexpr, rexpr) 1 {fprintf(outfp, pfDSUB);}
 rexpr: MUL(rexpr, rexpr) 1 {fprintf(outfp, pfDMUL);}
 rexpr: DIV(rexpr, rexpr) 1 {fprintf(outfp, pfDDIV);}
 rexpr: iexpr 1 {fprintf(outfp, pfI2D);}
-
-%! used to be rexpr but they return int
-iexpr: LT(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfLT, 0);}
-iexpr: GT(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfGT, 0);}
-iexpr: GE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfGE, 0);}
-iexpr: LE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfLE, 0);}
-iexpr: LOGIC_EQUAL(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfEQ, 0);}
-iexpr: NE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfNE, 0);}
 
 %!assign reals to IDS
 rexpr: PTR(LOCAL) isReal {fprintf(outfp, pfLOCAL pfLOAD2, LEFT_CHILD(p)->value.i);}
