@@ -5,6 +5,7 @@ public void printi(integer i)
 public integer entry (integer argc, string *argv, string *envp) {
 	integer i;
 	integer j;
+	integer k;
 	i := 2;
 	j := 3
 	if (i > 1 & i < 5) then {
@@ -16,14 +17,23 @@ public integer entry (integer argc, string *argv, string *envp) {
 	do {
 		j:= 3;
 		do {
+			k := 3;
+			println()
+			do {
+				prints("k -> ")
+				printi(++k);
+				println()
+			}while k < 5
+			println()
 			prints("j -> ")
 			printi(++j)
 			println();
 		}while (j < 10)
+		println()
 		prints("i -> ")
 		printi(++i)
 		println()
-	}while (i < 3)
+	}while (i < 7)
 
 	prints("not in if\n");
 	entry := 0;

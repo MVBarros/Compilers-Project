@@ -402,6 +402,65 @@ segment	.text
 	push	eax
 ; TRASH
 	add	esp, 4
+; CALL
+	call	$_println
+; PUSH
+	push	eax
+; TRASH
+	add	esp, 4
+; LOCAL
+	lea	eax, [ebp+-8]
+	push	eax
+; LOAD2
+	pop	eax
+	push	dword [eax+4]
+	push	dword [eax]
+; IMM
+	push	dword 1
+; IMM
+	push	dword 1
+; ADD
+	pop	eax
+	add	dword [esp], eax
+; IMM
+	push	dword 1
+; ADD
+	pop	eax
+	add	dword [esp], eax
+; I2D
+	fild	dword [esp]
+	sub	esp, byte 4
+	fstp	qword [esp]
+; DCMP
+	fld	qword [esp+8]
+	fld	qword [esp]
+	add	esp, byte 12
+	fsubp	st1
+	fxtract
+	ffree	st1
+	fistp	dword [esp]
+; IMM
+	push	dword 0
+; GT
+	pop	eax
+	xor	ecx, ecx
+	cmp	[esp], eax
+	setg	cl
+	mov	[esp], ecx
+; CALL
+	call	$_printi
+; TRASH
+	add	esp, 4
+; PUSH
+	push	eax
+; TRASH
+	add	esp, 4
+; CALL
+	call	$_println
+; PUSH
+	push	eax
+; TRASH
+	add	esp, 4
 ; LOCAL
 	lea	eax, [ebp+-8]
 	push	eax

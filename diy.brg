@@ -7,6 +7,14 @@
 #include "tabid.h"
 #include "postfix.h"
 
+/*for fors*/
+typedef struct double_lbl {
+	int b_lbl;
+	int e_lbl;
+} doublelbl;
+
+static doublelbl lbls[100];
+static int dblcnt = 0;
 extern FILE *outfp;
 char *dupstr(const char *s);
 
@@ -105,8 +113,8 @@ begin: START 1 { p->place = ++lbl; fprintf(outfp, pfLABEL, mklbl(lbl)); p->place
 
 
 %!for (upto and downto)
-%!start: START 1 {p->place = ++lbl; fprintf(outfp, pfLABEL, mklbl(lbl));}
-%!in; IN(star, iexpr) 1 {}
+%!forstart: START 1 {fprintf(outfp, pfLABEL, mklbl(++lbl)); lbls[dblcnt].b_lbl = lbl; }
+%!in: IN(star, iexpr) 1 {}
 
 %!stmt is a base or a break
 stmt: base

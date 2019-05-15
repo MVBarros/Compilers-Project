@@ -28,6 +28,9 @@ public integer entry (integer argc, string *argv, string *envp) {
 	printi(a = c);
 	println();
 	printi(a < c - 3.0);
+	println();
+	printi(a > 1 + 1 + 1);
+	println();
 	c := a + b;
 	printd(c + 7);
 	println();

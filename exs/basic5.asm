@@ -9,7 +9,7 @@ $_entry:
 ; ENTER
 	push	ebp
 	mov	ebp, esp
-	sub	esp, 8
+	sub	esp, 12
 ; IMM
 	push	dword 2
 ; COPY
@@ -162,12 +162,112 @@ $_i5:
 	add	esp, 4
 ; LABEL
 $_i6:
+; IMM
+	push	dword 3
+; COPY
+	push	dword [esp]
+; LOCAL
+	lea	eax, [ebp+-12]
+	push	eax
+; STORE
+	pop	ecx
+	pop	eax
+	mov	[ecx], eax
+; TRASH
+	add	esp, 4
+; CALL
+	call	$_println
+; PUSH
+	push	eax
+; TRASH
+	add	esp, 4
+; LABEL
+$_i7:
 ; RODATA
 segment	.rodata
 ; ALIGN
 align	4
 ; LABEL
-$_i7:
+$_i8:
+; CHAR
+	db	0x6B
+; CHAR
+	db	0x20
+; CHAR
+	db	0x2D
+; CHAR
+	db	0x3E
+; CHAR
+	db	0x20
+; CHAR
+	db	0x00
+; TEXT
+segment	.text
+; ADDR
+	push	dword $_i8
+; CALL
+	call	$_prints
+; TRASH
+	add	esp, 4
+; PUSH
+	push	eax
+; TRASH
+	add	esp, 4
+; LOCAL
+	lea	eax, [ebp+-12]
+	push	eax
+; COPY
+	push	dword [esp]
+; INCR
+	pop	eax
+	add	dword [eax], 1
+; LOAD
+	pop	eax
+	push	dword [eax]
+; CALL
+	call	$_printi
+; TRASH
+	add	esp, 4
+; PUSH
+	push	eax
+; TRASH
+	add	esp, 4
+; CALL
+	call	$_println
+; PUSH
+	push	eax
+; TRASH
+	add	esp, 4
+; LOCAL
+	lea	eax, [ebp+-12]
+	push	eax
+; LOAD
+	pop	eax
+	push	dword [eax]
+; IMM
+	push	dword 5
+; LT
+	pop	eax
+	xor	ecx, ecx
+	cmp	[esp], eax
+	setl	cl
+	mov	[esp], ecx
+; JNZ
+	pop	eax
+	cmp	eax, byte 0
+	jne	near $_i7
+; CALL
+	call	$_println
+; PUSH
+	push	eax
+; TRASH
+	add	esp, 4
+; RODATA
+segment	.rodata
+; ALIGN
+align	4
+; LABEL
+$_i9:
 ; CHAR
 	db	0x6A
 ; CHAR
@@ -183,7 +283,7 @@ $_i7:
 ; TEXT
 segment	.text
 ; ADDR
-	push	dword $_i7
+	push	dword $_i9
 ; CALL
 	call	$_prints
 ; TRASH
@@ -235,12 +335,18 @@ segment	.text
 	pop	eax
 	cmp	eax, byte 0
 	jne	near $_i6
+; CALL
+	call	$_println
+; PUSH
+	push	eax
+; TRASH
+	add	esp, 4
 ; RODATA
 segment	.rodata
 ; ALIGN
 align	4
 ; LABEL
-$_i8:
+$_i10:
 ; CHAR
 	db	0x69
 ; CHAR
@@ -256,7 +362,7 @@ $_i8:
 ; TEXT
 segment	.text
 ; ADDR
-	push	dword $_i8
+	push	dword $_i10
 ; CALL
 	call	$_prints
 ; TRASH
@@ -297,7 +403,7 @@ segment	.text
 	pop	eax
 	push	dword [eax]
 ; IMM
-	push	dword 3
+	push	dword 7
 ; LT
 	pop	eax
 	xor	ecx, ecx
@@ -313,7 +419,7 @@ segment	.rodata
 ; ALIGN
 align	4
 ; LABEL
-$_i9:
+$_i11:
 ; CHAR
 	db	0x6E
 ; CHAR
@@ -339,7 +445,7 @@ $_i9:
 ; TEXT
 segment	.text
 ; ADDR
-	push	dword $_i9
+	push	dword $_i11
 ; CALL
 	call	$_prints
 ; TRASH

@@ -1,5 +1,3 @@
-; EXTRN
-extern	$j
 ; TEXT
 segment	.text
 ; ALIGN
