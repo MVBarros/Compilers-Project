@@ -97,12 +97,21 @@ ifelse:	ELSE(cond2,stmt)	1 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)
 cond2:	IF(cond,stmt)	1 { p->place = ++lbl; fprintf(outfp, pfJMP pfLABEL,
 mklbl(p->place), mklbl(LEFT_CHILD(p)->place)); }
 
+%! while (do while)
+
+while: WHILE(do, expr) 1 { brkcnt--; fprintf(outfp, pfJNZ, mklbl(lbl)); }
+do: DO(begin,stmt) 1 {  p->place = LEFT_CHILD(p)->place;}
+begin: START 1 { p->place = ++lbl; fprintf(outfp, pfLABEL, mklbl(lbl)); p->place = (brklbl[++brkcnt] = lbl); }
+
+
+%!stmt is a base or a break
 stmt: base
 
 %!end of an expression is a base
 base: expr 1 {fprintf(outfp, pfTRASH, (int)p->place); }
 base: if
 base: ifelse
+base: while
 base: bloco
 
 
