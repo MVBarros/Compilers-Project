@@ -28,14 +28,30 @@ static void outstr(char *s) {
   while (*s) fprintf(outfp, pfCHAR, (unsigned char)*s++);
   fprintf(outfp, pfCHAR, 0);
 }
+
+int functionReturnType;
+
 static char *mkfunc(char *s) {
   static char buf[80];
   strcpy(buf, "_");
   strcat(buf, s);
   return buf;
 }
+/*use to determine function return type*/
+int isIntFunction(Node* p) {return p->info == 1 ? 1 : MAX_COST;}
+/*use to determine if LOCAL or ID is int*/
+int isInt(Node* p) {return p->info == 1 ? 1 : MAX_COST;}
+/*use to determine if LVAL of ATR is Int*/
+int isIntLval(Node* p) {return RIGHT_CHILD(p)->info == 1 ? 1 : MAX_COST;}
 
-int isInt(Node* p) {return IDfind(LEFT_CHILD(p)->value.s, NULL) == 1 ? 1 : MAX_COST;}
+
+/*use to determine function return type*/
+int isRealFunction(Node* p) {return p->info == 3 ? 1 : MAX_COST;}
+/*use to determine if LOCAL or ID is int*/
+int isReal(Node* p) {return p->info == 3 ? 1 : MAX_COST;}
+
+/*use to determine if LVAL of ATR is Real*/
+int isRealLval(Node* p) {return RIGHT_CHILD(p)->info == 3 ? 1 : MAX_COST;}
 
 %}
 %term INSTR=';' BLOCK='{' ARGB='(' NEXT=','
@@ -44,7 +60,8 @@ int isInt(Node* p) {return IDfind(LEFT_CHILD(p)->value.s, NULL) == 1 ? 1 : MAX_C
 %include "y.tab.h"
 %%
 
-finit: ARGB(bloco, params)
+finit: ARGB(bloco, params) 1 {if (functionReturnType == 1)fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8); if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}
+finit: ARGB(bloco, NIL) 1 {if (functionReturnType == 1) fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8); if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}
 
 params: param
 params:NEXT(params, param)
@@ -68,16 +85,17 @@ list: LIST(list, base)
 base: expr 1 {fprintf(outfp, pfTRASH, (int)p->place); }
 
 
-%!FIXME function return types
-expr: CALL(ID, arguments) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
-
-expr: CALL(ID, VOID) 1 {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s)); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
-
 
 %!an expression is any type of expression
 expr: iexpr {p->place = 4;}
 expr: sexpr {p->place = 4;}
 expr: rexpr {p->place = 8;}
+
+%!any type of function
+expr: CALL(ID, arguments) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+
+expr: CALL(ID, VOID) 1 {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s)); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+
 
 %!lval is an expression on the left side of an assignment
 lval: LOCAL 1 {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
@@ -87,10 +105,11 @@ lval: LOCAL 1 {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 sexpr:	STR	1	{	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl));
 					outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
 
+
 %! expressions relating to integers
 iassign: iexpr 1 {fprintf(outfp, pfDUP);}
 iexpr: INT 1 {fprintf(outfp, pfIMM, p->value.i);}
-iexpr: ATR(iassign, lval) 1 {fprintf(outfp, pfSTORE);}
+iexpr: ATR(iassign, lval) isIntLval {fprintf(outfp, pfSTORE);}
 iexpr: ADD(iexpr, iexpr) 1 {fprintf(outfp, pfADD);}
 iexpr: SUB(iexpr, iexpr) 1 {fprintf(outfp, pfSUB);}
 iexpr: DIV(iexpr, iexpr) 1 {fprintf(outfp, pfDIV);}
@@ -109,7 +128,7 @@ iexpr: LOGIC_NOT(iexpr) 1 {fprintf(outfp, pfNOT);}
 iexpr: UMINUS(iexpr) 1 {fprintf(outfp, pfNEG);}
 
 %!integer := <real number>
-iexpr: rexpr 1 {fprintf(outfp, pfD2I);}
+iexpr: rexpr 3 {fprintf(outfp, pfD2I);}
 
 %!increment and decrement integer only
 iexpr: INCR(lval) 1 {fprintf(outfp, pfDUP pfINCR pfLOAD, 1);}
@@ -117,14 +136,44 @@ iexpr: DECR(lval) 1 {fprintf(outfp, pfDUP pfDECR pfLOAD, 1);}
 iexpr: POSINC(lval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfINCR, 1);}
 iexpr: POSDEC(lval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfDECR, 1);}
 
-%! assign integers tp IDS
-iexpr: PTR(LOCAL) 1 {fprintf(outfp, pfLOCV, LEFT_CHILD(p)->value.i);}
-iexpr: PTR(ID) isInt {fprintf(outfp, pfADDR pfLOAD, LEFT_CHILD(p)->value.s);}
+%! assign integers to IDS
+iexpr: PTR(LOCAL) isInt {fprintf(outfp, pfLOCV, LEFT_CHILD(p)->value.i);}
+%!FIXMEiexpr: PTR(ID) isInt {fprintf(outfp, pfADDR pfLOAD, LEFT_CHILD(p)->value.s);}
+
+%!integer expression is a function that returns int
+iexpr: CALL(ID, arguments) isIntFunction {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+
+iexpr: CALL(ID, VOID) isIntFunction {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s)); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+
 
 %! expressions relating to real numbers
+rexpr: ATR(rassign, lval) isRealLval {fprintf(outfp, pfSTORE2);}
+rassign: rexpr 1 {fprintf(outfp, pfDUP2);}
 rexpr: REAL 1 {lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL pfDOUBLE, mklbl(lbl), p->value.r);
 					fprintf(outfp, pfTEXT pfADDR pfLOAD2, mklbl(lbl));}
+rexpr: ADD(rexpr, rexpr) 1 {fprintf(outfp, pfDADD);}
+rexpr: UMINUS(rexpr) 1 {fprintf(outfp, pfDNEG);}
+rexpr: SUB(rexpr, rexpr) 1 {fprintf(outfp, pfDSUB);}
+rexpr: MUL(rexpr, rexpr) 1 {fprintf(outfp, pfDMUL);}
+rexpr: DIV(rexpr, rexpr) 1 {fprintf(outfp, pfDDIV);}
+rexpr: iexpr 1 {fprintf(outfp, pfI2D);}
 
+%! used to be rexpr but they return int
+iexpr: LT(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfLT, 0);}
+iexpr: GT(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfGT, 0);}
+iexpr: GE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfGE, 0);}
+iexpr: LE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfLE, 0);}
+iexpr: LOGIC_EQUAL(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfEQ, 0);}
+iexpr: NE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfNE, 0);}
+
+%!assign reals to IDS
+rexpr: PTR(LOCAL) isReal {fprintf(outfp, pfLOCAL pfLOAD2, LEFT_CHILD(p)->value.i);}
+%!FIXME PTR(ID) isReal {fprintf(outfp, pfADDR pfLOAD2, LEFT_CHILD(p)->value.s);}
+
+%!real expression is a function that returns real
+rexpr: CALL(ID, arguments) isRealFunction {fprintf(outfp, pfCALL pfTRASH pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+
+rexpr: CALL(ID, VOID) isRealFunction {fprintf(outfp, pfCALL pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s)); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
 %!Arguments of function calls
 arguments: ARGS(NIL, expr) {p->place = RIGHT_CHILD(p)->place; }
@@ -160,6 +209,8 @@ void function(int pub, Node *type, char *name, Node *body)
 			IDreplace(fwd+40, name, par);
 			fflush(stdout);
   		fprintf(outfp, pfTEXT pfALIGN pfGLOBL pfLABEL pfENTER, mkfunc(name), pfFUNC, mkfunc(name), - localPos * (pfWORD/4));
+  		functionReturnType = type->value.i;
+  		//printNode(body, stdout, yynames);
   		yyselect(body);
   		fprintf(outfp, pfLEAVE pfRET); /* just in case ... */
 			freeNode(body);
