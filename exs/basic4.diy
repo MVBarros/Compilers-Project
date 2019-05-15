@@ -1,0 +1,13 @@
+public void println()
+public void prints(string i)
+public void printi(integer i)
+
+public integer entry (integer argc, string *argv, string *envp) {
+	string a;
+	a := "what is this string?\n"
+	printi(a[0] + 2);
+	println();
+	printi(a[0]);
+	println();
+	entry := 0;
+};

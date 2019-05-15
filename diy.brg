@@ -100,7 +100,6 @@ expr: rexpr {p->place = 8;}
 
 %!any type of function
 expr: CALL(ID, arguments) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
-
 expr: CALL(ID, VOID) 1 {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s)); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
 
@@ -115,15 +114,17 @@ lval: INDEX(lvec, expr) 1 { fprintf(outfp, pfIMM pfMUL pfADD,
 %! expressions relating to strings
 sexpr:	STR	1	{	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl));
 					outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
-sexpr: PTR(LOCAL) isString {fprintf(outfp, pfLOCV, LEFT_CHILD(p)->value.i);}
+
+
+sexpr: PTR(lval) isString {fprintf(outfp, pfLOAD);}
+
 sassign: sexpr 1 {fprintf(outfp, pfDUP);}
-sassign: iptrexpr 1 {fprintf(outfp, pfDUP);}
-%!sassign: iexpr 1 {fprintf(outfp, pfDUP); /*can assign integer to strings*/}
+sassign: iexpr 1 {fprintf(outfp, pfDUP); /*assign to pointer type*/}
+
 sexpr: ATR(sassign, lval) isStringLval {fprintf(outfp, pfSTORE);}
-
 sexpr: CALL(ID, arguments) isStringFunction {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
-
 sexpr: CALL(ID, VOID) isStringFunction {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s)); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+
 
 scmp: sexpr {fprintf(outfp, pfLOAD);}
 
@@ -135,8 +136,6 @@ iexpr: NE(scmp, scmp) 1 {fprintf(outfp, pfNE);}
 iexpr: LOGIC_EQUAL(scmp, scmp) 1 {fprintf(outfp, pfEQ);}
 iexpr: AND(scmp, scmp) 1 {fprintf(outfp, pfAND);}
 iexpr: OR (scmp, scmp) 1 {fprintf(outfp, pfOR);}
-
-
 
 %! expressions relating to integers
 iassign: iexpr 1 {fprintf(outfp, pfDUP);}
@@ -169,9 +168,18 @@ iexpr: DECR(lval) 1 {fprintf(outfp, pfDUP pfDECR pfLOAD, 1);}
 iexpr: POSINC(lval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfINCR, 1);}
 iexpr: POSDEC(lval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfDECR, 1);}
 
+
 %! assign integers to IDS
-iexpr: PTR(LOCAL) isInt {fprintf(outfp, pfLOCV, LEFT_CHILD(p)->value.i);}
-%!FIXMEiexpr: PTR(ID) isInt {fprintf(outfp, pfADDR pfLOAD, LEFT_CHILD(p)->value.s);}
+iexpr: PTR(lval) isInt {
+if (LEFT_CHILD(p)->place == 2) {
+	fprintf(outfp, pfLDCHR);
+}
+else {
+fprintf(outfp, pfLOAD);
+}
+}
+
+
 
 %!integer expression is a function that returns int
 iexpr: CALL(ID, arguments) isIntFunction {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
@@ -187,9 +195,11 @@ iexpr: GE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfGE, 0);}
 iexpr: LE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfLE, 0);}
 iexpr: LOGIC_EQUAL(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfEQ, 0);}
 iexpr: NE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfNE, 0);}
+%!iexpr: REF(LOCAL) 1 {fprintf(outfp, pfLOCAL, LEFT_CHILD(p)->value.i);}
 
 
-iptrexpr: REF(LOCAL) isIntPointer {fprintf(outfp, pfLOCAL, LEFT_CHILD(p)->value.i);}
+
+iexpr: REF(LOCAL) isIntPointer {fprintf(outfp, pfLOCAL, LEFT_CHILD(p)->value.i);}
 
 
 %! expressions relating to real numbers
@@ -205,8 +215,7 @@ rexpr: DIV(rexpr, rexpr) 1 {fprintf(outfp, pfDDIV);}
 rexpr: iexpr 1 {fprintf(outfp, pfI2D);}
 
 %!assign reals to IDS
-rexpr: PTR(LOCAL) isReal {fprintf(outfp, pfLOCAL pfLOAD2, LEFT_CHILD(p)->value.i);}
-%!FIXME PTR(ID) isReal {fprintf(outfp, pfADDR pfLOAD2, LEFT_CHILD(p)->value.s);}
+rexpr: PTR(lval) isReal {fprintf(outfp, pfLOAD2);}
 
 %!real expression is a function that returns real
 rexpr: CALL(ID, arguments) isRealFunction {fprintf(outfp, pfCALL pfTRASH pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
@@ -248,7 +257,7 @@ void function(int pub, Node *type, char *name, Node *body)
 			fflush(stdout);
   		fprintf(outfp, pfTEXT pfALIGN pfGLOBL pfLABEL pfENTER, mkfunc(name), pfFUNC, mkfunc(name), - localPos * (pfWORD/4));
   		functionReturnType = type->value.i;
-  		//printNode(body, stdout, yynames);
+  		printNode(body, stdout, yynames);
   		yyselect(body);
   		fprintf(outfp, pfLEAVE pfRET); /* just in case ... */
 			freeNode(body);
@@ -272,11 +281,12 @@ void declare(int pub, int cnst, Node *type, char *name, Node *value)
   if (!value) {
     if (!pub && cnst) yyerror("local constants must be initialised");
 
-    //if (pub && !cnst) {
+    if (pub ) {
     //	variable is extern
-    //	fprintf(outfp, pfEXTRN, name);
+    	fprintf(outfp, pfEXTRN, name);
+    }
     //if(!pub && !cnst) {
-
+    //	fprintf(outfp, pfGLOBL pfBSS pfALIGN pfLABEL pfBYTE, name, name ,name);
     //}
     //}
     //}

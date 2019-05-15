@@ -174,9 +174,11 @@ lv	: ID		{ long pos; int typ = IDfind($1, &pos);
                           if (pos == 0) $$ = strNode(ID, $1);
                           else {$$ = intNode(LOCAL, pos);}
 			  $$->info = typ;
+			  $$->place = typ;
 			}
 	| ID '[' expr ']' { Node *n;
                             long pos; int siz, typ = IDfind($1, &pos);
+                            int oldtyp = typ;
                             if (typ / 10 != 1 && typ % 5 != 2) yyerror("not a pointer");
                             if (pos == 0) n = strNode(ID, $1);
                             else n = intNode(LOCAL, pos);
@@ -185,6 +187,9 @@ lv	: ID		{ long pos; int typ = IDfind($1, &pos);
                             else if (typ % 5 == 2) typ = 1;
 			    if (typ >= 5) typ -= 5;
 			    $$->info = typ;
+			    $$->place = oldtyp;
+			    printf("type: %d\n", typ);
+			    printf("old: %d\n", oldtyp);
 			  }
 	;
 

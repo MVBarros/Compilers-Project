@@ -2,6 +2,9 @@ public void println()
 public void prints(string i)
 public void printi(integer i)
 
+integer i;
+public integer j;
+
 public string givehello() {
 	givehello := "hello\n";
 };
@@ -20,7 +23,6 @@ public integer entry (integer argc, string *argv, string *envp) {
 	prints("c: ");
 	prints(c);
 	prints("b: ");
-	==b[0] := 51;
 	prints(b);
 	a := "agg";
 	b := "bcc";
