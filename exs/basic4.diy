@@ -4,10 +4,10 @@ public void printi(integer i)
 
 public integer entry (integer argc, string *argv, string *envp) {
 	string a;
-	a := "what is this string?\n"
-	printi(a[0] + 2);
+	a := "what is this string"
+	printi(a[2] + 2);
 	println();
-	printi(a[0]);
+	printi(a[1]);
 	println();
 	entry := 0;
 };

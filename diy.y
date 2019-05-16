@@ -137,8 +137,9 @@ stmt	: base
 
 base	: ';'                   { $$ = nilNode(VOID); }
 	| DO { ncicl++; } stmt WHILE expr ';' { $$ = binNode(WHILE, binNode(DO, nilNode(START), $3), $5); ncicl--; }
-	| FOR lv IN expr UPTO expr step DO { ncicl++; } stmt       { $$ = binNode(';', binNode(ATR, $4, $2), binNode(FOR, binNode(IN, nilNode(START), binNode(LE, uniNode(PTR, $2), $6)), binNode(';', $10, binNode(ATR, binNode('+', uniNode(PTR, $2), $7), $2)))); ncicl--; }
-	| FOR lv IN expr DOWNTO expr step DO { ncicl++; } stmt       { $$ = binNode(';', binNode(ATR, $4, $2), binNode(FOR, binNode(IN, nilNode(START), binNode(GE, uniNode(PTR, $2), $6)), binNode(';', $10, binNode(ATR, binNode('-', uniNode(PTR, $2), $7), $2)))); ncicl--; }
+	| FOR lv IN expr UPTO expr step DO { ncicl++; } stmt       { $$ = binNode(';', binNode(ATR, $4, $2), binNode(FOR, binNode(IN, nilNode(START), binNode(LE, uniNode(PTR, $2), $6)), binNode(';', $10, binNode(ATR, binNode('+', uniNode(PTR, $2), $7), $2)))); ncicl--; $2->info = 1;
+	}
+	| FOR lv IN expr DOWNTO expr step DO { ncicl++; } stmt       { $$ = binNode(';', binNode(ATR, $4, $2), binNode(FOR, binNode(IN, nilNode(START), binNode(GE, uniNode(PTR, $2), $6)), binNode(';', $10, binNode(ATR, binNode('-', uniNode(PTR, $2), $7), $2)))); ncicl--; $2->info = 1;  }
 	| IF expr THEN stmt %prec IFX    { $$ = binNode(IF, $2, $4); }
 	| IF expr THEN stmt ELSE stmt    { $$ = binNode(ELSE, binNode(IF, $2, $4), $6); }
 	| expr ';'              { $$ = $1; }
@@ -175,6 +176,7 @@ lv	: ID		{ long pos; int typ = IDfind($1, &pos);
                           else {$$ = intNode(LOCAL, pos);}
 			  $$->info = typ;
 			  $$->place = typ;
+
 			}
 	| ID '[' expr ']' { Node *n;
                             long pos; int siz, typ = IDfind($1, &pos);
@@ -182,14 +184,13 @@ lv	: ID		{ long pos; int typ = IDfind($1, &pos);
                             if (typ / 10 != 1 && typ % 5 != 2) yyerror("not a pointer");
                             if (pos == 0) n = strNode(ID, $1);
                             else n = intNode(LOCAL, pos);
+                            n->info = typ;
                             $$ = binNode('[', n, $3);
 			    if (typ >= 10) typ -= 10;
                             else if (typ % 5 == 2) typ = 1;
 			    if (typ >= 5) typ -= 5;
 			    $$->info = typ;
 			    $$->place = oldtyp;
-			    printf("type: %d\n", typ);
-			    printf("old: %d\n", oldtyp);
 			  }
 	;
 

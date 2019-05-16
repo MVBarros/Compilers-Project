@@ -55,10 +55,6 @@ $_i1:
 ; CHAR
 	db	0x67
 ; CHAR
-	db	0x3F
-; CHAR
-	db	0x0A
-; CHAR
 	db	0x00
 ; TEXT
 segment	.text
@@ -82,13 +78,7 @@ segment	.text
 	pop	eax
 	push	dword [eax]
 ; IMM
-	push	dword 0
-; IMM
-	push	dword 4
-; MUL
-	pop	eax
-	imul	dword eax, [esp]
-	mov	[esp], eax
+	push	dword 2
 ; ADD
 	pop	eax
 	add	dword [esp], eax
@@ -122,13 +112,7 @@ segment	.text
 	pop	eax
 	push	dword [eax]
 ; IMM
-	push	dword 0
-; IMM
-	push	dword 4
-; MUL
-	pop	eax
-	imul	dword eax, [esp]
-	mov	[esp], eax
+	push	dword 1
 ; ADD
 	pop	eax
 	add	dword [esp], eax

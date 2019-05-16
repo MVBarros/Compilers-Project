@@ -23,6 +23,7 @@ public integer entry (integer argc, string *argv, string *envp) {
 				prints("k -> ")
 				printi(++k);
 				println()
+				break 1;
 			}while k < 5
 			println()
 			prints("j -> ")
