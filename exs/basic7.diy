@@ -21,11 +21,16 @@ public integer entry (integer argc, string *argv, string *envp) {
 			do {
 				prints("inner inner for\n");
 				k++;
+				if(k = 5) then{
+					prints("will break\n");
+					continue 1;
+				}
+
 			}while k < 5
 			prints("inner  for\n");
 			j++;
 		}while (j < 10)
-		prints("exterior for\n")
+		prints("for\n")
 		i++;
 	}while (i < 7)
 

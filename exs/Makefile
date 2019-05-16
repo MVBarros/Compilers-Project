@@ -6,7 +6,7 @@ RUN=../run # runtime directory
 AS=nasm -felf32 # assembler command
 LD=ld -melf_i386 # loader command
 
-SRC=  hello.diy basic.diy carol.diy basic2.diy basic3.diy basic4.diy basic5.diy basic6.diy #string.diy#ack.diy
+SRC= hello.diy basic.diy carol.diy basic2.diy basic3.diy basic4.diy basic5.diy basic6.diy basic7.diy basic8.diy recurs.diy iter.diy # recurs.diy iter.diy string.diy#ack.diy
 EXE=$(SRC:%.diy=%)
 
 all:: compiler runtime $(EXE)
