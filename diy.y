@@ -25,7 +25,12 @@ static int ncicl;
 static char *fpar;
 extern FILE* outfp;
 
-
+/*
+TODO: Variaveis globais (hoje a noite)
+			Ponteiros (domingo)
+			Otimizacoes (amanha fazer em ES e antes do autocarro)
+			Felicidade (TBD)
+*/
 int localPos = 0;
 int globalPos = 8;
 
