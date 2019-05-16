@@ -1,0 +1,23 @@
+public void printi(integer i)
+public void println()
+public void prints(string s)
+public void printd(number d)
+
+integer i;
+number j;
+string s;
+public integer entry (integer argc, string *argv, string *envp) {
+	i := 3;
+	prints("i -> ");
+	printi(i);
+	println();
+	j := 6.3;
+	prints("j -> ");
+	printd(j);
+	println();
+	s := "hello hello hello"
+	prints("s -> ")
+	prints(s);
+	println();
+	entry := 0;
+	};

@@ -7,7 +7,16 @@
 #include "tabid.h"
 #include "postfix.h"
 
-/*for fors*/
+
+/*
+TODO: Variaveis globais (hoje a noite) (done except const str)
+			Ponteiros (sabado)
+			Otimizacoes (amanha fazer em ES e antes do autocarro)
+			Felicidade (TBD)
+*/
+
+
+/*for cycles*/
 typedef struct double_lbl {
 	int b_lbl;
 	int e_lbl;
@@ -47,14 +56,14 @@ static char *mkfunc(char *s) {
 }
 
 int isIntFunction(Node* p) {return p->info == 1 ? 1 : MAX_COST;}
-int isInt(Node* p) {return (p->info == 1) ? 1 : MAX_COST;}
+int isInt(Node* p) {return ((p->info == 1) || (p->info == 6)) ? 1 : MAX_COST;}
 
 
 int isRealFunction(Node* p) {return p->info == 3 ? 1 : MAX_COST;}
-int isReal(Node* p) {return p->info == 3 ? 1 : MAX_COST;}
+int isReal(Node* p) {return((p->info == 3) || (p->info == 8)) ? 1 : MAX_COST;}
 
 
-int isString(Node* p) {return p->info == 2 ? 1 : MAX_COST;}
+int isString(Node* p) {return ((p->info == 2) || (p->info == 7)) ? 1 : MAX_COST;}
 int isStringFunction(Node* p) {return p->info == 2 ? 1 : MAX_COST;}
 
 
@@ -329,21 +338,73 @@ void declare(int pub, int cnst, Node *type, char *name, Node *value)
   if (!value) {
     if (!pub && cnst) yyerror("local constants must be initialised");
 
-    if (pub ) {
-    //	variable is extern
-    	fprintf(outfp, pfEXTRN, name);
-    }
-    //if(!pub && !cnst) {
-    //	fprintf(outfp, pfGLOBL pfBSS pfALIGN pfLABEL pfBYTE, name, name ,name);
-    //}
-    //}
-    //}
-
     return;
   }
   if (value->attrib = INT && value->value.i == 0 && type->value.i > 10)
   	return; /* NULL pointer */
   if ((typ = value->info) % 10 > 5) typ -= 5;
+
+  printf("type of id: %d\n", typ);
+  printf("my type: %d\n", type->value.i);
+
   if (type->value.i != typ)
     yyerror("wrong types in initialization");
 }
+
+void assign(int pub, int cnst, Node* type, char* name, Node* value) {
+	if(pub && !value) {
+		/*public variable not initialized must be extern*/
+		fprintf(outfp, pfEXTRN, name);
+		return;
+	}
+	if (pub) {
+		fprintf(outfp, pfGLOBL, name, pfOBJ);
+	}
+
+	char* memseg = 0;
+
+	if (value && cnst) {
+	 memseg = pfRODATA;
+	}
+
+	else if (value && !cnst) {
+		memseg = pfDATA;
+	}
+	if (memseg) {
+		/*cnst must be RODATA*/
+		fprintf(outfp, "%s", memseg);
+		fprintf(outfp, pfALIGN);
+		fprintf(outfp, pfLABEL, name);
+		if (value->info == 1) {
+			/*integer*/
+			fprintf(outfp, pfINTEGER, value->value.i);
+		}
+
+		else if (value->info == 3) {
+			/*double*/
+			fprintf(outfp, pfDOUBLE, value->value.r);
+		}
+		else if (value->info == 2 || value->info == 7) {
+			if(strcmp(memseg, pfRODATA) == 0) {
+				outstr(value->value.s);
+			}
+			else {
+			char *l = mklbl(++lbl);
+			fprintf(outfp, pfRODATA pfALIGN pfLABEL, l);
+			outstr(value->value.s);
+			fprintf(outfp, "%s", memseg);
+			fprintf(outfp, pfID, l);
+			}
+		}
+//		else if (value->info > 10) {
+//			/*value is an id*/
+//			fprintf(outfp, pfID, value->value.s);
+//		}
+
+	}
+	else {
+		fprintf(outfp, pfBSS pfALIGN pfLABEL pfBYTE, name, type->value.i == 3 ? 8 : 4);
+
+	}
+}
+

@@ -9,7 +9,7 @@
 
 extern int yylex();
 void yyerror(char *s);
-void declare(int pub, int cnst, Node *type, char *name, Node *value);
+//void declare(int pub, int cnst, Node *type, char *name, Node *value);
 void enter(int pub, int typ, char *name);
 int checkargs(char *name, Node *args);
 int nostring(Node *arg1, Node *arg2);
@@ -17,6 +17,7 @@ int intonly(Node *arg, int);
 int noassign(Node *arg1, Node *arg2);
 extern void function(int pub, Node *type, char *name, Node *body);
 extern void declare(int pub, int cnst, Node *type, char *name, Node *value);
+extern void assign(int pub, int cnst, Node *type, char *name, Node *value);
 
 
 extern void externs();
@@ -25,12 +26,7 @@ static int ncicl;
 static char *fpar;
 extern FILE* outfp;
 
-/*
-TODO: Variaveis globais (hoje a noite)
-			Ponteiros (domingo)
-			Otimizacoes (amanha fazer em ES e antes do autocarro)
-			Felicidade (TBD)
-*/
+
 int localPos = 0;
 int globalPos = 8;
 
@@ -72,10 +68,10 @@ int globalPos = 8;
 prog: file {externs();}
 file	:
 	| file error ';'
-	| file public tipo ID ';'	{ IDnew($3->value.i, $4, 0); declare($2, 0, $3, $4, 0); }
-	| file public CONST tipo ID ';'	{ IDnew($4->value.i+5, $5, 0); declare($2, 1, $4, $5, 0); }
-	| file public tipo ID init	{ IDnew($3->value.i, $4, 0); declare($2, 0, $3, $4, $5); }
-	| file public CONST tipo ID init	{ IDnew($4->value.i+5, $5, 0); declare($2, 1, $4, $5, $6); }
+	| file public tipo ID ';'	{ IDnew($3->value.i, $4, 0); declare($2, 0, $3, $4, 0); assign($2, 0, $3, $4, 0); }
+	| file public CONST tipo ID ';'	{ IDnew($4->value.i+5, $5, 0); declare($2, 1, $4, $5, 0); assign($2, 1, $4, $5, 0); }
+	| file public tipo ID init	{ IDnew($3->value.i, $4, 0); declare($2, 0, $3, $4, $5); assign($2, 0, $3, $4, $5); }
+	| file public CONST tipo ID init	{ IDnew($4->value.i+5, $5, 0); declare($2, 1, $4, $5, $6); assign($2, 1, $4, $5, $6); }
 	| file public tipo ID { enter($2, $3->value.i, $4); } finit { function($2, $3, $4, $6);  }
 	| file public VOID ID { enter($2, 4, $4); } finit { function($2, intNode(VOID, 4), $4, $6); }
 	;

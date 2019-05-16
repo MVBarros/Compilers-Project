@@ -1,0 +1,56 @@
+public void printi(integer i)
+public void println()
+public void prints(string s)
+public void printd(number d)
+
+
+
+integer i := 7;
+const integer j := 13;
+number p := 12.0;
+const number q := 14.5;
+string s := "ola";
+string t := const "ola so que const";
+==integer a := i;
+==const string u := "Ola eu sou uma string const";
+public integer entry (integer argc, string *argv, string *envp) {
+	prints("i -> ");
+	printi(i);
+	println();
+	prints("j -> ");
+	printi(j);
+	println();
+	prints("p -> ");
+	printd(p);
+	println();
+	prints("q -> ");
+	printd(q);
+	println();
+	i := 4;
+	p := 1.1;
+	prints("after assignment i -> ");
+	printi(i);
+	println();
+	prints("after assignment p -> ");
+	printd(p);
+	println();
+	prints("s -> ")
+	prints(s)
+	println()
+	prints("t -> ")
+	prints(t);
+	println();
+	s := "after assignment"
+	prints("s -> ");
+	prints(s);
+	println();
+	==prints("u -> ");
+	==prints(u);
+	==println();
+
+==	prints("a -> ");
+==	printi(a);
+==	println(	);
+
+	entry := 0;
+};
