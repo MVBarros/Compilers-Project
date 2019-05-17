@@ -77,10 +77,10 @@ int isIntPointer(Node* p) {return p->info == 11 ? 1 : MAX_COST;}
 %include "y.tab.h"
 %%
 
-finit: ARGB(bloco, params) 1 {if (functionReturnType != 3)fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8);
-															else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}
-finit: ARGB(bloco, NIL) 1 {if (functionReturnType != 3) fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8);
-													 else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}
+finit: ARGB(bloco, params) 1 {if (functionReturnType != 4) {if (functionReturnType != 3)fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8);
+															else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}}
+finit: ARGB(bloco, NIL) 1 {if (functionReturnType != 4) {if (functionReturnType != 3)fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8);
+															else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}}
 
 params: param
 params:NEXT(params, param)
@@ -106,8 +106,6 @@ if: IF(cond, stmt) {fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
 cond: expr 1 {p->place = ++lbl; fprintf(outfp, pfJZ, mklbl(p->place));}
 
 
-
-
 %! if-else
 ifelse:	ELSE(cond2,stmt)	1 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
 cond2:	IF(cond,stmt)	1 { p->place = ++lbl; fprintf(outfp, pfJMP pfLABEL,
@@ -119,7 +117,7 @@ while: WHILE(do, expr) 1 {dblcnt--; brkcnt--; fprintf(outfp, pfJNZ pfLABEL,
 													mklbl(lbls[dblcnt].b_lbl), mklbl(lbls[dblcnt].e_lbl)); }
 do: DO(begin,stmt) 1 {}
 begin: START 1 { fprintf(outfp, pfLABEL, mklbl(++lbl)); lbls[dblcnt].b_lbl = lbl; lbls[dblcnt].e_lbl = ++lbl;
-	brklbl[brkcnt++] = lbls[dblcnt++].e_lbl; }
+				brklbl[brkcnt++] = lbls[dblcnt++].e_lbl; }
 
 
 %!for (upto and downto)
@@ -136,6 +134,7 @@ stmt: base
 stmt: BREAK 1 { fprintf(outfp, pfJMP, mklbl(brklbl[brkcnt - p->value.i])); }
 stmt: CONTINUE 1 { fprintf(outfp, pfJMP, mklbl(brklbl[p->value.i])); }
 
+
 %!end of an expression is a base
 base: expr 1 {fprintf(outfp, pfTRASH, (int)p->place); }
 base: if
@@ -149,6 +148,7 @@ base: bloco
 expr: iexpr {p->place = 4;}
 expr: sexpr {p->place = 4;}
 expr: rexpr {p->place = 8;}
+
 
 %!any type of function
 expr: CALL(ID, arguments) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s),
@@ -190,7 +190,7 @@ sexpr: CALL(ID, VOID) isStringFunction {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEF
 																			 p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
 
-scmp: sexpr {fprintf(outfp, pfLOAD);}
+scmp: sexpr {fprintf(outfp, pfLDCHR);}
 iexpr: LT(scmp, scmp) 1 {fprintf(outfp, pfLT);}
 iexpr: GT(scmp, scmp) 1 {fprintf(outfp, pfGT);}
 iexpr: GE(scmp, scmp) 1 {fprintf(outfp, pfGE);}
@@ -284,10 +284,10 @@ rexpr: PTR(rlval) 1 {fprintf(outfp, pfLOAD2);}
 
 %!real expression is a function that returns real
 rexpr: CALL(ID, arguments) isRealFunction {fprintf(outfp, pfCALL pfTRASH pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s),
-														 (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+														 (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8 : 4;}
 
 rexpr: CALL(ID, VOID) isRealFunction {fprintf(outfp, pfCALL pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s));
-																			 p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+									 p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
 %!Arguments of function calls
 arguments: ARGS(NIL, expr) {p->place = RIGHT_CHILD(p)->place; }
@@ -338,7 +338,11 @@ void function(int pub, Node *type, char *name, Node *body)
 		else {
 			IDreplace(fwd+40, name, par);
 			fflush(stdout);
-  		fprintf(outfp, pfTEXT pfALIGN pfGLOBL pfLABEL pfENTER, mkfunc(name), pfFUNC, mkfunc(name), - localPos * (pfWORD/4));
+  		fprintf(outfp, pfTEXT pfALIGN);
+  		if(pub) {
+  		 fprintf(outfp, pfGLOBL, mkfunc(name), pfFUNC); 
+  		}
+  		fprintf(outfp, pfLABEL pfENTER, mkfunc(name), - localPos * (pfWORD/4));
   		functionReturnType = type->value.i;
   		printNode(body, stdout, yynames);
   		yyselect(body);

@@ -3,21 +3,11 @@ public void println()
 public void prints(string s)
 public void printd(number d)
 
-integer i;
-number p;
-string s;
+void printconst() {
+	prints("i am in void function\n")
+};
 
 public integer entry (integer argc, string *argv, string *envp) {
-	i := 3;
-	p := 4.3;
-	s := "ola ola ola\n\n\n\n\n\n\n";
-	prints("i -> ")
-	printi(i)
-	println()
-	prints("p -> ")
-	printd(p)
-	println()
-	prints("s -> ")
-	prints(s)
+	printconst()
 	entry := 0;
 };
