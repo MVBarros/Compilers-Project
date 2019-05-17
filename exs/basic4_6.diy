@@ -1,0 +1,45 @@
+public void println()
+public void prints(string i)
+public void printi(integer i)
+
+public integer entry (integer argc, string *argv, string *envp) {
+	string i;
+	string j;
+	string k;
+
+	i := "ola";
+	j := "pla"; ==maior que ola
+	if (i < "pla" ) then {
+		prints("in if\n");
+	}
+	else {
+		prints("in else\n");
+	}
+	if (j > "ola" ) then {
+		prints("in second if check assembly\n");
+	}
+
+	if (j <= "qla") then {
+		prints("in third if\n");
+	}
+
+	if (j >= "ola") then {
+		prints("in if expected JLT\n");
+	}else {
+		prints("in else will never reach here\n");
+	}
+
+	if(i <> j) then {
+		prints("in not equal expected JEQ\n");
+	}else {
+		prints("will never reach here\n");
+	}
+
+	i := "pla";
+	if(i = j) then {
+		prints("in equal expected JNE\n");
+	}else {
+		prints("will never reach here\n");
+	}
+
+};

@@ -1,0 +1,59 @@
+public void println()
+public void prints(string i)
+public void printi(integer i)
+
+public integer entry (integer argc, string *argv, string *envp) {
+	integer i;
+	integer j;
+	integer k;
+	number p;
+	number q;
+	i := 2;
+	j := 3
+	p := 3.1;
+	q := 4.5;
+	if (i < 1 ) then {
+		prints("in if\n");
+	}
+	else {
+		prints("in else\n");
+	}
+	if (j > 2 ) then {
+		prints("in second if check assembly\n");
+	}
+
+	if (j <= 7) then {
+		prints("in third if\n");
+	}
+
+	if (j >= 1) then {
+		prints("in if expected JLT\n");
+	}else {
+		prints("in else will never reach here\n");
+	}
+
+
+	if (p < q) then {
+		prints("in fourth if\n");
+	}else {
+		prints("in 4th else\n");
+	}
+
+	if (q >= p) then {
+		prints("in fith if\n");
+	}
+
+	if(i <> j) then {
+		prints("in not equal expected JEQ\n");
+	}else {
+		prints("will never reach here\n");
+	}
+
+	i := 3;
+	if(i = j) then {
+		prints("in equal expected JNE\n");
+	}else {
+		prints("will never reach here\n");
+	}
+
+};

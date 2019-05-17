@@ -105,6 +105,9 @@ list: LIST(list, base)
 if: IF(cond, stmt) {fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
 cond: expr 1 {p->place = ++lbl; fprintf(outfp, pfJZ, mklbl(p->place));}
 
+
+
+
 %! if-else
 ifelse:	ELSE(cond2,stmt)	1 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
 cond2:	IF(cond,stmt)	1 { p->place = ++lbl; fprintf(outfp, pfJMP pfLABEL,
@@ -253,6 +256,13 @@ iexpr: NE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfNE, 0);}
 %!iexpr: REF(ilval) 1 {fprintf(outfp, pfLOCAL, LEFT_CHILD(p)->value.i);}
 
 
+%!optimization of ors and ands
+%!iexpr:	AND(iand,iexpr)	1 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
+%!iand:	iexpr		1 { p->place = ++lbl; fprintf(outfp, pfDUP pfJZ pfTRASH, mklbl(p->place), 4);}
+%!iexpr:	OR(ior,iexpr)	1 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
+%!ior: iexpr 1 { p->place = ++lbl; fprintf(outfp, pfDUP pfJNZ pfTRASH, mklbl(p->place), 4); }
+
+
 %! is a int pointer
 iexpr: REF(ilval)
 
@@ -283,6 +293,22 @@ rexpr: CALL(ID, VOID) isRealFunction {fprintf(outfp, pfCALL pfDPUSH, mkfunc(LEFT
 arguments: ARGS(NIL, expr) {p->place = RIGHT_CHILD(p)->place; }
 arguments: ARGS(arguments, expr) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place;}
 
+
+
+%!otimizacoes condicoes
+cond: LT(iexpr, iexpr) {p->place = ++lbl; fprintf(outfp, pfJGE, mklbl(p->place));}
+cond: GT(iexpr, iexpr) {p->place = ++lbl; fprintf(outfp, pfJLE, mklbl(p->place));}
+cond: LE(iexpr, iexpr) {p->place = ++lbl; fprintf(outfp, pfJGT, mklbl(p->place));}
+cond: GE(iexpr, iexpr) {p->place = ++lbl; fprintf(outfp, pfJLT, mklbl(p->place));}
+cond: LOGIC_EQUAL(iexpr, iexpr) {p->place = ++lbl; fprintf(outfp, pfJNE, mklbl(p->place));}
+cond: NE(iexpr, iexpr) {p->place = ++lbl; fprintf(outfp, pfJEQ, mklbl(p->place));}
+
+cond: LT(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJGE, mklbl(p->place));}
+cond: GT(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJLE, mklbl(p->place));}
+cond: LE(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJGT, mklbl(p->place));}
+cond: GE(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJLT, mklbl(p->place));}
+cond: LOGIC_EQUAL(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJNE, mklbl(p->place));}
+cond: NE(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJEQ, mklbl(p->place));}
 
 %%
 #include "y.tab.h"

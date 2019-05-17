@@ -41,7 +41,10 @@ public integer entry (integer argc, string *argv, string *envp) {
 	println();
 	printi(++k);
 	k := 19.7 + 3.4;
-
+	println()
+	println()
+	println()
+	printi(i & j);
 	println();
 	printi(k);
 	println();
