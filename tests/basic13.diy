@@ -15,5 +15,8 @@ public integer entry (integer argc, string *argv, string *envp) {
 	i := 14;
 	printinteger(argc)
 	prints(argv[0])
+	println()
+	prints(argv[1])
+	println()
 	entry := 0;
 };

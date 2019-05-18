@@ -274,8 +274,8 @@ rexpr: CALL(ID, VOID) isReal { fprintf(outfp, pfCALL pfDPUSH, mkfunc(LEFT_CHILD(
 
 
 %!Arguments of function calls
-arguments: ARGS(NIL, expr) {p->place = RIGHT_CHILD(p)->place;}
-arguments: ARGS(arguments, expr) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place; fprintf(outfp, pfSWAP);}
+arguments: ARGS(expr, NIL) {p->place = LEFT_CHILD(p)->place;}
+arguments: ARGS(expr, arguments) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place;}
 
 
 %!otimizacoes condicoes
