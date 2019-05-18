@@ -150,7 +150,7 @@ expr: iexpr {p->place = 4;}
 expr: sexpr {p->place = 4;}
 expr: rexpr {p->place = 8;}
 expr: iptrexpr {p->place = 4;}
-
+expr: sptrexpr {p->place = 4;}
 
 %!any type of function
 expr: CALL(ID, arguments) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s),
@@ -237,6 +237,8 @@ iexpr: POSDEC(ilval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfDECR, 1);}
 %! assign integers to IDS
 iexpr: PTR(ilval) 1 {if (LEFT_CHILD(p)->place == 2) { fprintf(outfp, pfLDCHR);}
                         else {fprintf(outfp, pfLOAD);}}
+                        
+iexpr: PTR(slval) 1 {fprintf(outfp, pfLDCHR);}
 
 %!integer expression is a function that returns int
 iexpr: CALL(ID, arguments) isIntFunction {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place)));
@@ -294,7 +296,7 @@ arguments: ARGS(NIL, expr) {p->place = RIGHT_CHILD(p)->place; }
 arguments: ARGS(arguments, expr) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place;}
 
 
-%!expr relating to integer pointers
+%!expr relating to string pointers
 iptrlval: LOCAL isIntPointer {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 iptrlval: ID isIntPointer {fprintf(outfp, pfADDR, p->value.s);}
 iptrlvec: iptrlval 1 {fprintf(outfp, pfLOAD);}

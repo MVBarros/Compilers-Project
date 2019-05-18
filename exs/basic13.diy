@@ -1,0 +1,19 @@
+public void printi(integer i)
+public void println()
+public void prints(string s)
+public void printd(number d)
+
+
+void printinteger(integer i) {
+	prints("argument passed is ->")
+	printi(i)
+	println()
+};
+
+public integer entry (integer argc, string *argv, string *envp) {
+	integer i;
+	i := 14;
+	printinteger(argc)
+	prints(argv[0])
+	entry := 0;
+};

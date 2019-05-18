@@ -19,6 +19,8 @@ public integer entry (integer argc, string *argv, string *envp) {
 	println()
 	==prints(*sptr)
 	prints(sptr[0])
+	printi(argc)
+	println()
 	prints(argv[1])
 	println()
 	prints(argv[2])
