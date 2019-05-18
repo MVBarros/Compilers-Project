@@ -1,0 +1,27 @@
+public void printi(integer i)
+public void println()
+public void prints(string s)
+public void printd(number d)
+
+integer i := 7;
+integer* ptr := i;
+string s := "ola\n";
+string* sptr := s;
+public integer entry (integer argc, string *argv, string *envp) {
+	integer j; 
+	j := 3;
+	printi(*ptr)
+	println()
+	printi(ptr[0])
+	println()
+	ptr := &j
+	printi(*ptr)
+	println()
+	==prints(*sptr)
+	prints(sptr[0])
+	prints(argv[1])
+	println()
+	prints(argv[2])
+	println()
+	entry := 0
+};

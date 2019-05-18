@@ -57,6 +57,7 @@ static char *mkfunc(char *s) {
 
 int isIntFunction(Node* p) {return p->info == 1 ? 1 : MAX_COST;}
 int isInt(Node* p) {return ((p->info == 1) || (p->info == 6)) ? 1 : MAX_COST;}
+int isIntPointer(Node* p) {return ((p->info == 11) || (p->info == 16)) ? 1 : MAX_COST;}
 
 
 int isRealFunction(Node* p) {return p->info == 3 ? 1 : MAX_COST;}
@@ -65,9 +66,9 @@ int isReal(Node* p) {return((p->info == 3) || (p->info == 8)) ? 1 : MAX_COST;}
 
 int isString(Node* p) {return ((p->info == 2) || (p->info == 7)) ? 1 : MAX_COST;}
 int isStringFunction(Node* p) {return p->info == 2 ? 1 : MAX_COST;}
+int isStringPointer(Node* p) {return ((p->info == 12) || (p->info == 17)) ? 1 : MAX_COST;}
 
 
-int isIntPointer(Node* p) {return p->info == 11 ? 1 : MAX_COST;}
 
 %}
 %term INSTR=';' BLOCK='{' ARGB='(' NEXT=','
@@ -148,6 +149,7 @@ base: bloco
 expr: iexpr {p->place = 4;}
 expr: sexpr {p->place = 4;}
 expr: rexpr {p->place = 8;}
+expr: iptrexpr {p->place = 4;}
 
 
 %!any type of function
@@ -160,9 +162,8 @@ expr: CALL(ID, VOID) 1 {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->valu
 %!lval is an expression on the left side of an assignment
 ilval: LOCAL isInt {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 ilval: ID isInt {fprintf(outfp, pfADDR, p->value.s);}
-ilvec: ilval 1 {fprintf(outfp, pfLOAD);}
-ilval: INDEX(ilvec, expr) isInt { fprintf(outfp, pfIMM pfMUL pfADD, 4);}
 ilval: INDEX(slvec, expr) isInt {fprintf(outfp, pfADD);}
+
 
 rlval: LOCAL isReal {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 rlval: ID isReal {fprintf(outfp, pfADDR, p->value.s);}
@@ -181,7 +182,8 @@ sexpr:	STR	1	{	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl));
 sexpr: PTR(slval) 1 {fprintf(outfp, pfLOAD);}
 
 sassign: sexpr 1 {fprintf(outfp, pfDUP);}
-sassign: iexpr 1 {fprintf(outfp, pfDUP); /*assign to pointer type*/}
+sassign: iexpr 1 {fprintf(outfp, pfDUP); /*assign to null (0)*/}
+sassign: iptrexpr 1 {fprintf(outfp, pfDUP); /*assign to pointer type*/}
 
 sexpr: ATR(sassign, slval) 1 {fprintf(outfp, pfSTORE);}
 sexpr: CALL(ID, arguments) isStringFunction {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s),
@@ -224,7 +226,6 @@ iexpr: OR (iexpr, iexpr) 1 {fprintf(outfp, pfOR);}
 iexpr: FACTORIAL(iexpr) 1 {/*fprintf(outfp)*/ /*FIXME*/}
 iexpr: NOT(iexpr) 1 {fprintf(outfp, pfIMM pfEQ, 0);}
 iexpr: UMINUS(iexpr) 1 {fprintf(outfp, pfNEG);}
-%!iexpr: REF(LOCAL) 1 {fprintf(outfp, pfLOAD)}
 
 
 %!increment and decrement integer only
@@ -253,7 +254,6 @@ iexpr: GE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfGE, 0);}
 iexpr: LE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfLE, 0);}
 iexpr: LOGIC_EQUAL(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfEQ, 0);}
 iexpr: NE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfNE, 0);}
-%!iexpr: REF(ilval) 1 {fprintf(outfp, pfLOCAL, LEFT_CHILD(p)->value.i);}
 
 
 %!optimization of ors and ands
@@ -264,7 +264,7 @@ iexpr: NE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfNE, 0);}
 
 
 %! is a int pointer
-iexpr: REF(ilval)
+iptrexpr: REF(ilval)
 
 
 %! expressions relating to real numbers
@@ -292,6 +292,46 @@ rexpr: CALL(ID, VOID) isRealFunction {fprintf(outfp, pfCALL pfDPUSH, mkfunc(LEFT
 %!Arguments of function calls
 arguments: ARGS(NIL, expr) {p->place = RIGHT_CHILD(p)->place; }
 arguments: ARGS(arguments, expr) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place;}
+
+
+%!expr relating to integer pointers
+iptrlval: LOCAL isIntPointer {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
+iptrlval: ID isIntPointer {fprintf(outfp, pfADDR, p->value.s);}
+iptrlvec: iptrlval 1 {fprintf(outfp, pfLOAD);}
+iptrexpr: REF(ilval) 1
+%!indexation of a pointer is an iexpr
+ilval: INDEX(iptrlvec, expr) isInt { fprintf(outfp, pfIMM pfMUL pfADD, 4);}
+
+iptrexpr: PTR(iptrlval) 1 {fprintf(outfp, pfLOAD);}
+iexpr: PTR(iptrexpr) 1 {fprintf(outfp, pfLOAD);}
+
+iptrexpr: REF(ilval) 1 {/*generate no code*/}
+iptrassign: iptrexpr 1 {fprintf(outfp, pfDUP);}
+iptrexpr: ATR(iptrassign, iptrlval) 1 {fprintf(outfp, pfSTORE);}
+
+sptrlval: LOCAL isStringPointer {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
+sptrlval: ID isStringPointer {fprintf(outfp, pfADDR, p->value.s);}
+sptrlvec: sptrlval 1 {fprintf(outfp, pfLOAD);}
+sptrexpr: REF(slval) 1
+%!indexation of a pointer is an iexpr
+slval: INDEX(sptrlvec, expr) isString { fprintf(outfp, pfIMM pfMUL pfADD, 4);}
+
+sptrexpr: PTR(sptrlval) 1 {fprintf(outfp, pfLOAD);}
+sexpr: PTR(sptrexpr) 1 {fprintf(outfp, pfLOAD);}
+
+sptrexpr: REF(slval) 1 {/*generate no code*/}
+sptrassign: sptrexpr 1 {fprintf(outfp, pfDUP);}
+sptrexpr: ATR(sptrassign, sptrlval) 1 {fprintf(outfp, pfSTORE);}
+
+
+
+iptrcmp: iptrexpr 1 {fprintf(outfp, pfSTORE);}
+iexpr: LT(iptrcmp, iptrcmp) 1 {fprintf(outfp, pfLT);}
+iexpr: GT(iptrcmp, iptrcmp) 1 {fprintf(outfp, pfGT);}
+iexpr: GE(iptrcmp, iptrcmp) 1 {fprintf(outfp, pfGE);}
+iexpr: LE(iptrcmp, iptrcmp) 1 {fprintf(outfp, pfLE);}
+iexpr: LOGIC_EQUAL(iptrcmp, iptrcmp) 1 {fprintf(outfp, pfEQ);}
+iexpr: NE(iptrcmp, iptrcmp) 1 {fprintf(outfp, pfNE);}
 
 
 
@@ -426,10 +466,10 @@ void assign(int pub, int cnst, Node* type, char* name, Node* value) {
 			fprintf(outfp, pfID, l);
 			}
 		}
-//		else if (value->info > 10) {
-//			/*value is an id*/
-//			fprintf(outfp, pfID, value->value.s);
-//		}
+		else if (value->info > 10) {
+			/*value is an id*/
+			fprintf(outfp, pfID, value->value.s);
+		}
 
 	}
 	else {
