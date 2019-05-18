@@ -32,6 +32,9 @@ public integer entry (integer argc, string *argv, string *envp) {
 	prints("a > b ? ");
 	printi(a > b);
 	println();
+	d := *a;
+	printi(d)
+	println()
 	prints("hello world\n");
 	d := 81;
 	a := &d;
