@@ -47,7 +47,6 @@ static void outstr(char *s) {
   fprintf(outfp, pfCHAR, 0);
 }
 
-
 static char *mkfunc(char *s) {
   static char buf[80];
   strcpy(buf, "_");
@@ -61,6 +60,9 @@ int isInt(Node* p) {return ((p->info == 1) || (p->info == 6) || (p->info > 10 ))
 int isReal(Node* p) {return((p->info == 3) || (p->info == 8)) ? 1 : MAX_COST;}
 int isString(Node* p) {return ((p->info == 2) || (p->info == 7)) ? 1 : MAX_COST;}
 int isVoid(Node* p) {return (p->info == 4) ? 1 : MAX_COST;}
+
+int compareNodeLeft(Node* p) {return compareNode(LEFT_CHILD(LEFT_CHILD(LEFT_CHILD(p))), RIGHT_CHILD(p), 0) ? MAX_COST : 1;}
+int compareNodeRight(Node* p) {return compareNode(LEFT_CHILD(RIGHT_CHILD(LEFT_CHILD(p))), RIGHT_CHILD(p), 0) ? MAX_COST : 1;}
 
 
 %}
@@ -95,9 +97,9 @@ tipo: NUMBER
 list: base
 list: LIST(list, base)
 
+
 %! simple if (no else): uses only one label
 if: IF(cond, stmt) 1{fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
-cond: expr 1 {p->place = ++lbl; fprintf(outfp, pfJZ, mklbl(p->place));}
 
 
 %! if-else
@@ -160,7 +162,7 @@ lval: slval
 %!lval is an expression on the left side of an assignment
 ilval: LOCAL isInt {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 ilval: ID isInt {fprintf(outfp, pfADDR, p->value.s);}
-ilval: INDEX(lvec, expr) isInt { if (isString(LEFT_CHILD(p))) fprintf(outfp, pfADD); 
+ilval: INDEX(lvec, expr) isInt { if (isString(LEFT_CHILD(p)) == 1) fprintf(outfp, pfADD); 
 								else fprintf(outfp, pfIMM pfMUL pfADD, 4);}
 
 
@@ -179,12 +181,14 @@ iexpr: FACTORIAL(iexpr) 1 {/*fprintf(outfp)*/ /*FIXME*/}
 iexpr: NOT(iexpr) 1 {fprintf(outfp, pfIMM pfEQ, 0);}
 iexpr: UMINUS(iexpr) 1 {fprintf(outfp, pfNEG);}
 
+
 %!increment and decrement integer only
 iexpr: INCR(ilval) 1 {fprintf(outfp, pfDUP pfINCR pfLOAD, 1);}
 iexpr: DECR(ilval) 1 {fprintf(outfp, pfDUP pfDECR pfLOAD, 1);}
 iexpr: POSINC(ilval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfINCR, 1);}
 iexpr: POSDEC(ilval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfDECR, 1);}
 iexpr: REF(lval) 
+
 
 %! assign integers to IDS
 iexpr: PTR(ilval) isInt {if (LEFT_CHILD(p)->place == 2) { fprintf(outfp, pfLDCHR);}
@@ -193,8 +197,8 @@ iexpr: PTR(PTR(ilval)) isInt {fprintf(outfp, pfLOAD pfLOAD);}
 iexpr: PTR(PTR(slval)) isInt {fprintf(outfp, pfLOAD pfLDCHR);}
 
 %!integer expression is a function that returns int
-iexpr: CALL(ID, arguments) isInt {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), 
-										(int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+iexpr: CALL(ID, arguments) isInt {fprintf(outfp, pfIMM pfCALL pfTRASH pfPUSH, 1, mkfunc(LEFT_CHILD(p)->value.s),(int)((RIGHT_CHILD(p)->place))); 
+p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 iexpr: CALL(ID, VOID) isInt {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s));
 									p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
@@ -224,7 +228,7 @@ slval: INDEX(lvec, expr) isString { fprintf(outfp, pfIMM pfMUL pfADD, 4);}
 %! expressions relating to strings
 sexpr:	STR	1	{	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl));
 					outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
-sexpr: PTR(slval) 1 {fprintf(outfp, pfLOAD);}
+sexpr: PTR(slval) isString {fprintf(outfp, pfLOAD);}
 sexpr: PTR(PTR(ilval)) isString {fprintf(outfp, pfLOAD pfLOAD);}
 
 sassign: sexpr 1 {fprintf(outfp, pfDUP);}
@@ -236,7 +240,7 @@ sexpr: CALL(ID, VOID) isString {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(
 							 	p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
 %! expressions relating to real numbers
-rexpr: PTR(rlval) 1 {fprintf(outfp, pfLOAD2);}
+rexpr: PTR(rlval) isReal {fprintf(outfp, pfLOAD2);}
 rexpr: PTR(PTR(ilval)) isReal {fprintf(outfp, pfLOAD pfLOAD2);}
 rlval: LOCAL isReal {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 rlval: ID isReal {fprintf(outfp, pfADDR, p->value.s);}
@@ -263,12 +267,33 @@ arguments: ARGS(arguments, expr) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(
 
 
 %!otimizacoes condicoes
-%!cond: LT(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJGE, mklbl(p->place));}
-%!cond: GT(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJLE, mklbl(p->place));}
-%!cond: LE(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJGT, mklbl(p->place));}
-%!cond: GE(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJLT, mklbl(p->place));}
-%!cond: LOGIC_EQUAL(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJNE, mklbl(p->place));}
-%!cond: NE(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJEQ, mklbl(p->place));}
+cond: LT(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJGE, mklbl(p->place));}
+cond: GT(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJLE, mklbl(p->place));}
+cond: LE(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJGT, mklbl(p->place));}
+cond: GE(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJLT, mklbl(p->place));}
+cond: LOGIC_EQUAL(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJNE, mklbl(p->place));}
+cond: NE(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJEQ, mklbl(p->place));}
+cond: expr 1 {p->place = ++lbl; fprintf(outfp, pfJZ, mklbl(p->place));}
+
+%! otimizacoes atribuicoes
+base: ATR(ADD(PTR(ilval), INT), LOCAL) compareNodeLeft {fprintf(outfp, pfINCR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(SUB(PTR(ilval), INT), LOCAL) compareNodeLeft {fprintf(outfp, pfDECR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(ADD(INT, PTR(ilval)), LOCAL) compareNodeRight {fprintf(outfp, pfINCR, LEFT_CHILD(LEFT_CHILD(p))->value.i);}
+
+
+base: ATR(ADD(PTR(ilval), INT), ID) compareNodeLeft {fprintf(outfp, pfINCR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(SUB(PTR(ilval), INT), ID) compareNodeLeft {fprintf(outfp, pfDECR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(ADD(INT, PTR(ilval)), ID) compareNodeRight {fprintf(outfp, pfINCR, LEFT_CHILD(LEFT_CHILD(p))->value.i);}
+
+
+base: ATR(ADD(PTR(ilval), INT), INDEX(LOCAL, INT)) compareNodeLeft {fprintf(outfp, pfINCR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(SUB(PTR(ilval), INT), INDEX(LOCAL, INT)) compareNodeLeft {fprintf(outfp, pfDECR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(ADD(INT, PTR(ilval)), INDEX(LOCAL, INT)) compareNodeRight {fprintf(outfp, pfINCR, LEFT_CHILD(LEFT_CHILD(p))->value.i);}
+
+base: ATR(ADD(PTR(ilval), INT), INDEX(ID, INT)) compareNodeLeft {fprintf(outfp, pfINCR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(SUB(PTR(ilval), INT), INDEX(ID, INT)) compareNodeLeft {fprintf(outfp, pfDECR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(ADD(INT, PTR(ilval)), INDEX(ID, INT)) compareNodeRight {fprintf(outfp, pfINCR, LEFT_CHILD(LEFT_CHILD(p))->value.i);}
+
 
 
 %%

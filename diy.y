@@ -72,8 +72,8 @@ file	:
 	| file public CONST tipo ID ';'	{ IDnew($4->value.i+5, $5, 0); declare($2, 1, $4, $5, 0); assign($2, 1, $4, $5, 0); }
 	| file public tipo ID init	{ IDnew($3->value.i, $4, 0); declare($2, 0, $3, $4, $5); assign($2, 0, $3, $4, $5); }
 	| file public CONST tipo ID init	{ IDnew($4->value.i+5, $5, 0); declare($2, 1, $4, $5, $6); assign($2, 1, $4, $5, $6); }
-	| file public tipo ID { enter($2, $3->value.i, $4); } finit { function($2, $3, $4, $6);  }
-	| file public VOID ID { enter($2, 4, $4); } finit { function($2, intNode(VOID, 4), $4, $6); }
+	| file public tipo ID { enter($2, $3->value.i, $4); } finit { function($2, $3, $4, $6); }
+	| file public VOID ID { enter($2, 4, $4); } finit { function($2, intNode(VOID, 4), $4, $6);}
 	;
 
 public	:               { $$ = 0; }
@@ -122,11 +122,14 @@ param	: tipo ID               { $$ = binNode(PARAM, $1, strNode(ID, $2));
                                   if (IDlevel() == 1) {
                                   	fpar[++fpar[0]] = $1->value.i;
                                   	IDnew($1->value.i, $2, globalPos);
+                          			printf("globalPos: %d\n", globalPos);
                                   	globalPos += $1->value.i == 3 ? 8 : 4;
                                   	}
                                   else {
                                   	localPos -= $1->value.i == 3 ? 8 : 4;
                                   	IDnew($1->value.i, $2, localPos);
+                          			printf("localPos: %d\n", localPos);
+
                                   }
 
                                 }
@@ -242,7 +245,7 @@ char **yynames =
 
 void enter(int pub, int typ, char *name) {
 	globalPos = 8;
-	localPos = 0;
+	localPos = 0; 
 	fpar = malloc(32); /* 31 arguments, at most */
 	fpar[0] = 0; /* argument count */
 	if (IDfind(name, (long*)IDtest) < 20)
@@ -250,8 +253,10 @@ void enter(int pub, int typ, char *name) {
 	IDpush();
 	if (typ != 4) {
 		IDnew(typ, name, globalPos);
+		printf("globalPos in enter: %d\n", globalPos);
 		globalPos += typ == 3 ? 8 : 4;
 	}
+
 }
 
 int checkargs(char *name, Node *args) {

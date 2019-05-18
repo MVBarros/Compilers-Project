@@ -1,0 +1,21 @@
+public void prints(string s)
+public void printi(integer i)
+public void printd(number d)
+public void println()
+public integer atoi(string s)
+
+== Computacao de factoriais de forma recursiva
+public number factorial (integer n) {
+    if n < 2 then factorial := 1
+    else factorial := n * factorial(n-1)
+};
+
+
+
+== Modulo principal de calculo de factoriais
+integer n := 1
+public integer entry (integer argc, string *argv, string *envp) {
+  printi(n); prints("! = "); printd(factorial(n)); println()
+
+  entry := 0
+};
