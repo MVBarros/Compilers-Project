@@ -7,9 +7,15 @@ integer i := 7;
 integer* ptr := i;
 string s := "ola\n";
 string* sptr := s;
+number r := 32.2
+number* rptr := r;
 public integer entry (integer argc, string *argv, string *envp) {
 	integer j; 
+	number t;
+	string q;
 	j := 3;
+	t := 15.3;
+	q := "ola ola\n"
 	printi(*ptr)
 	println()
 	printi(ptr[0])
@@ -19,11 +25,20 @@ public integer entry (integer argc, string *argv, string *envp) {
 	println()
 	==prints(*sptr)
 	prints(sptr[0])
-	printi(argc)
+	sptr := &q
+	prints(sptr[0])
+	==printi(argc)
+	==println()
+	==prints(argv[1])
+	==println()
+	==prints(argv[2])
+	==println()
+	printd(rptr[0])
 	println()
-	prints(argv[1])
+	printd(*rptr)
 	println()
-	prints(argv[2])
+	rptr := &t;
+	printd(t)
 	println()
 	entry := 0
 };
