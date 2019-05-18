@@ -152,7 +152,7 @@ base	: ';'                   { $$ = nilNode(VOID); }
 	| IF expr THEN stmt ELSE stmt    { $$ = binNode(ELSE, binNode(IF, $2, $4), $6); }
 	| expr ';'              { $$ = $1; }
 	| bloco                 { $$ = $1; }
-	| lv '#' expr ';'       { $$ = binNode('#', $3, $1); }
+	| lv '#' expr ';'       { $$ = binNode('#', $3, $1);}
 	| error ';'       { $$ = nilNode(NIL); }
 	;
 

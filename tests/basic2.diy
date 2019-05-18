@@ -46,5 +46,8 @@ public integer entry (integer argc, string *argv, string *envp) {
 	println();
 	printd(1 * 7.4);
 	println();
+	c := 3!;
+	printd(c)
+	println();
 	entry:= 0;
 };

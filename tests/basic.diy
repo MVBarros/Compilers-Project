@@ -51,5 +51,8 @@ public integer entry (integer argc, string *argv, string *envp) {
 	k := f5(27, 2, 3, 4.0);
 	printi(k);
 	println();
+	k := 3 & 4;
+	printi(k);
+	println();
 	entry := 0;
 };

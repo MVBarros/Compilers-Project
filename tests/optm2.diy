@@ -22,6 +22,10 @@ public integer entry (integer argc, string *argv, string *envp) {
 		prints("in second if check assembly\n");
 	}
 
+	if (j > 2 & j < 4) then {
+		prints("in and if check assembly\n");
+	}
+
 	if (j <= 7) then {
 		prints("in third if\n");
 	}

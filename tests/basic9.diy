@@ -44,13 +44,7 @@ public integer entry (integer argc, string *argv, string *envp) {
 	prints("s -> ");
 	prints(s);
 	println();
-	==prints("u -> ");
-	==prints(u);
-	==println();
 
-==	prints("a -> ");
-==	printi(a);
-==	println(	);
 
 	entry := 0;
 };

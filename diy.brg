@@ -186,9 +186,7 @@ iexpr: SUB(iexpr, iexpr) 1 {fprintf(outfp, pfSUB);}
 iexpr: DIV(iexpr, iexpr) 1 {fprintf(outfp, pfDIV);}
 iexpr: MOD(iexpr, iexpr) 1 {fprintf(outfp, pfMOD);}
 iexpr: MUL(iexpr, iexpr) 1 {fprintf(outfp, pfMUL);}
-iexpr: AND(iexpr, iexpr) 1 {fprintf(outfp, pfAND);}
-iexpr: OR (iexpr, iexpr) 1 {fprintf(outfp, pfOR);}
-iexpr: FACTORIAL(iexpr) 1 {/*fprintf(outfp)*/ /*FIXME*/}
+rexpr: FACTORIAL(iexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfDPUSH, "_factorial", 4);}
 iexpr: NOT(iexpr) 1 {fprintf(outfp, pfIMM pfEQ, 0);}
 iexpr: UMINUS(iexpr) 1 {fprintf(outfp, pfNEG);}
 
@@ -278,13 +276,19 @@ arguments: ARGS(expr, NIL) {p->place = LEFT_CHILD(p)->place;}
 arguments: ARGS(expr, arguments) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place;}
 
 
+expr:	AND(and,iexpr)	1 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
+and:	iexpr		1 { p->place = ++lbl; fprintf(outfp, pfDUP pfJZ pfTRASH, mklbl(p->place), 4); }
+expr:	OR(or,iexpr)	1 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
+or: iexpr 1 { p->place = ++lbl; fprintf(outfp, pfDUP pfJNZ pfTRASH, mklbl(p->place), 4); }
+
+
 %!otimizacoes condicoes
-cond: LT(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJGE, mklbl(p->place));}
-cond: GT(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJLE, mklbl(p->place));}
-cond: LE(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJGT, mklbl(p->place));}
-cond: GE(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJLT, mklbl(p->place));}
-cond: LOGIC_EQUAL(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJNE, mklbl(p->place));}
-cond: NE(cmp, cmp) {p->place = ++lbl; fprintf(outfp, pfJEQ, mklbl(p->place));}
+cond: LT(cmp, cmp) 1 {p->place = ++lbl; fprintf(outfp, pfJGE, mklbl(p->place));}
+cond: GT(cmp, cmp) 1 {p->place = ++lbl; fprintf(outfp, pfJLE, mklbl(p->place));}
+cond: LE(cmp, cmp) 1 {p->place = ++lbl; fprintf(outfp, pfJGT, mklbl(p->place));}
+cond: GE(cmp, cmp) 1 {p->place = ++lbl; fprintf(outfp, pfJLT, mklbl(p->place));}
+cond: LOGIC_EQUAL(cmp, cmp) 1 {p->place = ++lbl; fprintf(outfp, pfJNE, mklbl(p->place));}
+cond: NE(cmp, cmp) 1 {p->place = ++lbl; fprintf(outfp, pfJEQ, mklbl(p->place));}
 cond: expr 1 {p->place = ++lbl; fprintf(outfp, pfJZ, mklbl(p->place));}
 
 %! otimizacoes atribuicoes
@@ -322,6 +326,8 @@ void externs()
   for (i = 0; i < extcnt; i++)
     if (extrns[i])
       fprintf(outfp, pfEXTRN, extrns[i]);
+
+  fprintf(outfp, pfEXTRN, "_factorial");
 }
 
 
