@@ -128,6 +128,8 @@ forbody: FOR(forin, forinstr)  {fprintf(outfp, pfLABEL, mklbl(lbls[--dblcnt].e_l
 forinstr: INSTR(forstmt, expr) 1 {fprintf(outfp, pfJMP, mklbl(lbls[dblcnt - 1].b_lbl));}
 forstmt: stmt 1 {}
 forin: IN(forstart, expr) 1 {fprintf(outfp, pfJZ, mklbl(++lbl)); lbls[dblcnt].e_lbl = lbl; brklbl[brkcnt++] = lbls[dblcnt++].e_lbl;}
+
+
 forstart: START 1 {fprintf(outfp, pfLABEL, mklbl(++lbl)); lbls[dblcnt].b_lbl = lbl; }
 
 
@@ -335,7 +337,7 @@ rptrlval: ID isRealPointer {fprintf(outfp, pfADDR, p->value.s);}
 rptrlvec: rptrlval 1 {fprintf(outfp, pfLOAD);}
 rptrexpr: REF(rlval) 1
 %!indexation of a pointer is an iexpr
-rlval: INDEX(rptrlvec, expr) isReal { fprintf(outfp, pfIMM pfMUL pfADD, 4);}
+rlval: INDEX(rptrlvec, expr) isReal { fprintf(outfp, pfIMM pfMUL pfADD, 8);}
 
 rptrexpr: PTR(rptrlval) 1 {fprintf(outfp, pfLOAD);}
 rexpr: PTR(rptrexpr) 1 {fprintf(outfp, pfLOAD2);}
@@ -344,6 +346,20 @@ rptrexpr: REF(rlval) 1 {/*generate no code*/}
 rptrassign: rptrexpr 1 {fprintf(outfp, pfDUP);}
 rptrexpr: ATR(rptrassign, rptrlval) 1 {fprintf(outfp, pfSTORE);}
 
+iexpr: LT(sptrexpr, sptrexpr) 1 {fprintf(outfp, pfLT);}
+iexpr: GT(sptrexpr, sptrexpr) 1 {fprintf(outfp, pfGT);}
+iexpr: GE(sptrexpr, sptrexpr) 1 {fprintf(outfp, pfGE);}
+iexpr: LE(sptrexpr, sptrexpr) 1 {fprintf(outfp, pfLE);}
+iexpr: LOGIC_EQUAL(sptrexpr, sptrexpr) 1 {fprintf(outfp, pfEQ);}
+iexpr: NE(sptrexpr, sptrexpr) 1 {fprintf(outfp, pfNE);}
+
+iptrcmp: iptrexpr 1 {fprintf(outfp, pfSTORE);}
+iexpr: LT(rptrexpr, rptrexpr) 1 {fprintf(outfp, pfLT);}
+iexpr: GT(rptrexpr, rptrexpr) 1 {fprintf(outfp, pfGT);}
+iexpr: GE(rptrexpr, rptrexpr) 1 {fprintf(outfp, pfGE);}
+iexpr: LE(rptrexpr, rptrexpr) 1 {fprintf(outfp, pfLE);}
+iexpr: LOGIC_EQUAL(rptrexpr, rptrexpr) 1 {fprintf(outfp, pfEQ);}
+iexpr: NE(rptrexpr, rptrexpr) 1 {fprintf(outfp, pfNE);}
 
 iptrcmp: iptrexpr 1 {fprintf(outfp, pfSTORE);}
 iexpr: LT(iptrcmp, iptrcmp) 1 {fprintf(outfp, pfLT);}
@@ -369,6 +385,9 @@ cond: LE(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJGT, mklbl(p->place));}
 cond: GE(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJLT, mklbl(p->place));}
 cond: LOGIC_EQUAL(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJNE, mklbl(p->place));}
 cond: NE(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJEQ, mklbl(p->place));}
+
+
+
 
 %%
 #include "y.tab.h"
