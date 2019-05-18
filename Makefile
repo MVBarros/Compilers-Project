@@ -4,6 +4,7 @@ LIB=lib # compiler library directory
 UTIL=util # compiler library: lib$(LIB).a
 RUN=run # runtime directory
 EXS=exs # examples directory
+TST=tests
 CC=gcc
 CFLAGS=-g -DYYDEBUG
 
@@ -23,4 +24,5 @@ clean::
 	make -C $(LIB) clean
 	make -C $(RUN) clean
 	make -C $(EXS) clean
+	make -C $(TST) clean
 	rm -f *.o $(LANG) lex.yy.c y.tab.c y.tab.h y.output yyselect.c *.asm *~

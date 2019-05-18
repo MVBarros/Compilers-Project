@@ -2,8 +2,8 @@ public void printd(number d)
 public void println()
 public void printi(integer i)
 
-public number hello(integer i ) {
-	hello := i * 7.4;
+public number hello(integer i, integer j) {
+	hello := i * j * 7.4;
 };
 
 
@@ -39,10 +39,10 @@ public integer entry (integer argc, string *argv, string *envp) {
 	println();
 	printi(a > 3);
 	println();
-	c := hello(1);
+	c := hello(1, 1);
 	printd(c);
 	println();
-	printd(hello(2));
+	printd(hello(2, 2));
 	println();
 	printd(1 * 7.4);
 	println();

@@ -30,6 +30,8 @@ extern FILE* outfp;
 int localPos = 0;
 int globalPos = 8;
 
+int placeofReturn = 0;
+
 %}
 
 %union {
@@ -173,8 +175,8 @@ list	: base
 	| list base     { $$ = binNode(LIST, $1, $2); }
 	;
 
-args	: expr		{ $$ = binNode(ARGS, nilNode(NIL), $1); }
-	| args ',' expr { $$ = binNode(ARGS, $1, $3); }
+args	: expr		{ $$ = binNode(ARGS, nilNode(NIL), $1); $$->info = 1;}
+	| args ',' expr { $$ = binNode(ARGS, $1, $3); p->info = LEFT_CHILD(p)->info + 1;}
 	;
 
 lv	: ID		{ long pos; int typ = IDfind($1, &pos);
@@ -252,9 +254,10 @@ void enter(int pub, int typ, char *name) {
 		IDnew(typ+20, name, (long)fpar);
 	IDpush();
 	if (typ != 4) {
-		IDnew(typ, name, globalPos);
-		printf("globalPos in enter: %d\n", globalPos);
-		globalPos += typ == 3 ? 8 : 4;
+		localPos -= typ == 3 ? 8 : 4;
+		IDnew(typ, name, localPos);
+		placeofReturn = localPos;
+
 	}
 
 }

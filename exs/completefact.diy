@@ -4,16 +4,18 @@ public void printd(number d)
 public void println()
 public integer atoi(string s)
 
-== Computacao de factoriais de forma recursiva
-public number factorial (integer n) {
-    if n < 2 then factorial := 1
-    else factorial := n * factorial(n-1)
+== Computacao de factoriais de forma iterativa
+public number factorial(integer n) {
+    factorial := 1
+    if n > 0 then
+        do
+            factorial := factorial * n
+        while --n > 1
 };
 
 
-
 == Modulo principal de calculo de factoriais
-integer n := 1
+integer n := 5
 public integer entry (integer argc, string *argv, string *envp) {
   printi(n); prints("! = "); printd(factorial(n)); println()
 

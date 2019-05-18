@@ -34,6 +34,7 @@ static char *extrns[100]; /* emit externs at the end only */
 static int extcnt;
 extern int localPos;
 int functionReturnType;
+extern int placeofReturn;
 
 int lbl;
 char *mklbl(int n) {
@@ -45,6 +46,16 @@ char *mklbl(int n) {
 static void outstr(char *s) {
   while (*s) fprintf(outfp, pfCHAR, (unsigned char)*s++);
   fprintf(outfp, pfCHAR, 0);
+}
+
+static void mkdouble(double d) {
+	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL pfDOUBLE, mklbl(lbl), d);
+					fprintf(outfp, pfTEXT pfADDR pfLOAD2, mklbl(lbl));
+}
+
+static void mkint(int i) {
+	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL pfINTEGER, mklbl(lbl), i);
+					fprintf(outfp, pfTEXT pfADDR pfLOAD, mklbl(lbl));
 }
 
 static char *mkfunc(char *s) {
@@ -73,10 +84,10 @@ int compareNodeRight(Node* p) {return compareNode(LEFT_CHILD(RIGHT_CHILD(LEFT_CH
 %include "y.tab.h"
 %%
 
-finit: ARGB(bloco, params) 1 {if (functionReturnType != 4) {if (functionReturnType != 3)fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8);
-															else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}}
-finit: ARGB(bloco, NIL) 1 {if (functionReturnType != 4) {if (functionReturnType != 3)fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8);
-															else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}}
+finit: ARGB(bloco, params) 1 {if (functionReturnType != 4) {if (functionReturnType != 3)fprintf(outfp, pfLOCAL pfLOAD pfPOP, -4);
+															else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, -8);}}
+finit: ARGB(bloco, NIL) 1 {if (functionReturnType != 4) {if (functionReturnType != 3)fprintf(outfp, pfLOCAL pfLOAD pfPOP, -4);
+															else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, -8);}}
 
 params: param
 params:NEXT(params, param)
@@ -197,8 +208,9 @@ iexpr: PTR(PTR(ilval)) isInt {fprintf(outfp, pfLOAD pfLOAD);}
 iexpr: PTR(PTR(slval)) isInt {fprintf(outfp, pfLOAD pfLDCHR);}
 
 %!integer expression is a function that returns int
-iexpr: CALL(ID, arguments) isInt {fprintf(outfp, pfIMM pfCALL pfTRASH pfPUSH, 1, mkfunc(LEFT_CHILD(p)->value.s),(int)((RIGHT_CHILD(p)->place))); 
+iexpr: CALL(ID, arguments) isInt {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s),(int)((RIGHT_CHILD(p)->place))); 
 p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+
 iexpr: CALL(ID, VOID) isInt {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s));
 									p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
@@ -257,13 +269,13 @@ rexpr: DIV(rexpr, rexpr) 1 {fprintf(outfp, pfDDIV);}
 rexpr: iexpr 1 {fprintf(outfp, pfI2D);}
 rexpr: CALL(ID, arguments) isReal {fprintf(outfp, pfCALL pfTRASH pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s),
 														 (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8 : 4;}
-rexpr: CALL(ID, VOID) isReal {fprintf(outfp, pfCALL pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s));
+rexpr: CALL(ID, VOID) isReal { fprintf(outfp, pfCALL pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s));
 									 p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
 
 %!Arguments of function calls
-arguments: ARGS(NIL, expr) {p->place = RIGHT_CHILD(p)->place; }
-arguments: ARGS(arguments, expr) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place;}
+arguments: ARGS(NIL, expr) {p->place = RIGHT_CHILD(p)->place;}
+arguments: ARGS(arguments, expr) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place; fprintf(outfp, pfSWAP);}
 
 
 %!otimizacoes condicoes
