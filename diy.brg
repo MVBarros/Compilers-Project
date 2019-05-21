@@ -74,7 +74,7 @@ int compareNodeRight(Node* p) {return compareNode(LEFT_CHILD(RIGHT_CHILD(LEFT_CH
 %}
 %term INSTR=';' BLOCK='{' ARGB='(' NEXT=','
 %term FACTORIAL='!' ADD='+' SUB='-' MUL='*' DIV='/' MOD='%'
-%term LT='<' GT='>' LOGIC_EQUAL='=' AND='&' OR='|' LOGIC_NOT='~'
+%term LT='<' GT='>' LOGIC_EQUAL='=' AND='&' OR='|' LOGIC_NOT='~' ALLOC='#'
 %term INDEX='['
 %include "y.tab.h"
 %%
@@ -147,6 +147,8 @@ base: ifelse
 base: while
 base: for
 base: bloco
+base: ALLOC(balloc, lval) 1 {fprintf(outfp, pfSTORE);}
+balloc: expr 1 {fprintf(outfp, pfALLOC pfSP pfSTORE pfSP);}
 
 
 %!an expression is any type of expression
@@ -210,9 +212,9 @@ p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 iexpr: CALL(ID, VOID) isInt {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s));
 									p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
-
+%!FIXME
 cmp: iexpr 1 {}
-cmp: sexpr 1 {fprintf(outfp, pfLDCHR);}
+cmp: sexpr 1 {}
 iexpr: LT(cmp, cmp) 1 {fprintf(outfp, pfLT);}
 iexpr: GT(cmp, cmp) 1 {fprintf(outfp, pfGT);}
 iexpr: GE(cmp, cmp) 1 {fprintf(outfp, pfGE);}
@@ -221,6 +223,7 @@ iexpr: NE(cmp, cmp) 1 {fprintf(outfp, pfNE);}
 iexpr: LOGIC_EQUAL(cmp, cmp) 1 {fprintf(outfp, pfEQ);}
 iexpr: AND(cmp, cmp) 1 {fprintf(outfp, pfAND);}
 iexpr: OR (cmp, cmp) 1 {fprintf(outfp, pfOR);}
+
 %! comparisons between real expressions return int
 iexpr: LT(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfLT, 0);}
 iexpr: GT(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfGT, 0);}

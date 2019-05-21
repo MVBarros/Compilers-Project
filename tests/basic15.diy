@@ -17,6 +17,7 @@ public string strcpy(string a, string b) {
   integer i
   i := 0
   strcpy := a
+
   if b <> 0 & *b <> 0 then
     do {
       a[i] := b[i];
@@ -43,20 +44,41 @@ public integer entry (integer argc, string *argv, string *envp) {
   string s;
   string t;
   string u;
+  string v;
+  string w;
+  integer i;
+  v # 20;
 
+  v[0] := 100;
+  v[1] := 100;
+  v[2] := 100;
+  v[3] := 100;
+  v[4] := 100;
+  v[5] := 101;
+  v[6] := 0;
+  prints(v)
+  println()
   s := "ola"
   t := "ola"
-  u := 0;
-
   prints("strcmp -> ")
   printi(strcmp(s, t))
   println()
   prints("strchr -> ")
   prints(strchr(s, 108))
   println()
-  prints("null strcpy -> ")
-  prints(strcpy(s, u))
-  println()
 
+  prints("strcpy -> ")
+  u := 0;
+
+  prints(strcpy(v, "hello world"))
+  println()
+  w # 30
+
+  for i in 0 upto 10 step 1 do {
+    w[i] := 100 + i;
+  }
+  w[11] := 0;
+  prints(w)
+  println()
   entry := 0;
 };
