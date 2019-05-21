@@ -346,7 +346,7 @@ void function(int pub, Node *type, char *name, Node *body)
   		}
   		fprintf(outfp, pfLABEL pfENTER, mkfunc(name), - localPos * (pfWORD/4));
   		functionReturnType = type->value.i;
-  		printNode(body, stdout, yynames);
+  		if (trace) printNode(body, stdout, yynames);
   		yyselect(body);
   		fprintf(outfp, pfLEAVE pfRET); /* just in case ... */
 			freeNode(body);
