@@ -1,5 +1,5 @@
 /*
-generated at Tue May 21 10:59:47 2019
+generated at Tue May 21 13:11:22 2019
 by $Id: pburg.c,v 2.5 2017/11/16 09:41:42 prs Exp $
 */
 #include <stdio.h>
@@ -2708,470 +2708,471 @@ static void yyreduce(NODEPTR_TYPE p, int goalnt)
 		break;
 	case 24: /* forstmt: stmt */
 #line 131 "diy.brg"
-{}
+{fprintf(outfp, pfLABEL, mklbl(lbls[dblcnt - 1].cnt_lbl));}
 		break;
 	case 25: /* forin: IN(forstart,expr) */
 #line 132 "diy.brg"
-{fprintf(outfp, pfJZ, mklbl(++lbl)); lbls[dblcnt].e_lbl = lbl; brklbl[brkcnt++] = lbls[dblcnt++].e_lbl;}
+{fprintf(outfp, pfJZ, mklbl(++lbl)); lbls[dblcnt].e_lbl = lbl; brklbl[brkcnt++] = lbls[dblcnt].e_lbl;
+														lbls[dblcnt].br_lbl = lbl; lbls[dblcnt++].cnt_lbl = ++lbl;}
 		break;
 	case 26: /* forstart: START */
-#line 133 "diy.brg"
+#line 134 "diy.brg"
 {fprintf(outfp, pfLABEL, mklbl(++lbl)); lbls[dblcnt].b_lbl = lbl; }
 		break;
 	case 27: /* stmt: base */
-#line 137 "diy.brg"
+#line 138 "diy.brg"
 
 		break;
 	case 28: /* stmt: BREAK */
-#line 138 "diy.brg"
+#line 139 "diy.brg"
 { fprintf(outfp, pfJMP, mklbl(lbls[dblcnt - p->value.i].br_lbl)); }
 		break;
 	case 29: /* stmt: CONTINUE */
-#line 139 "diy.brg"
+#line 140 "diy.brg"
 { fprintf(outfp, pfJMP, mklbl(lbls[dblcnt - p->value.i].cnt_lbl)); }
 		break;
 	case 30: /* base: expr */
-#line 143 "diy.brg"
+#line 144 "diy.brg"
 {if (p->place != 0) fprintf(outfp, pfTRASH, (int)p->place); }
 		break;
 	case 31: /* base: if */
-#line 144 "diy.brg"
-
-		break;
-	case 32: /* base: ifelse */
 #line 145 "diy.brg"
 
 		break;
-	case 33: /* base: while */
+	case 32: /* base: ifelse */
 #line 146 "diy.brg"
 
 		break;
-	case 34: /* base: for */
+	case 33: /* base: while */
 #line 147 "diy.brg"
 
 		break;
-	case 35: /* base: bloco */
+	case 34: /* base: for */
 #line 148 "diy.brg"
 
 		break;
-	case 36: /* expr: iexpr */
-#line 152 "diy.brg"
-{p->place = 4;}
+	case 35: /* base: bloco */
+#line 149 "diy.brg"
+
 		break;
-	case 37: /* expr: sexpr */
+	case 36: /* expr: iexpr */
 #line 153 "diy.brg"
 {p->place = 4;}
 		break;
-	case 38: /* expr: rexpr */
+	case 37: /* expr: sexpr */
 #line 154 "diy.brg"
+{p->place = 4;}
+		break;
+	case 38: /* expr: rexpr */
+#line 155 "diy.brg"
 {p->place = 8;}
 		break;
 	case 39: /* expr: CALL(ID,arguments) */
-#line 158 "diy.brg"
+#line 159 "diy.brg"
 {fprintf(outfp, pfCALL pfTRASH, mkfunc(LEFT_CHILD(p)->value.s),
 														 (int)((RIGHT_CHILD(p)->place))); p->place = 0;}
 		break;
 	case 40: /* expr: CALL(ID,VOID) */
-#line 160 "diy.brg"
+#line 161 "diy.brg"
 {fprintf(outfp, pfCALL, mkfunc(LEFT_CHILD(p)->value.s));
 												p->place = 0;}
 		break;
 	case 41: /* lvec: lval */
-#line 164 "diy.brg"
+#line 165 "diy.brg"
 {fprintf(outfp, pfLOAD);}
 		break;
 	case 42: /* lval: ilval */
-#line 165 "diy.brg"
-
-		break;
-	case 43: /* lval: rlval */
 #line 166 "diy.brg"
 
 		break;
-	case 44: /* lval: slval */
+	case 43: /* lval: rlval */
 #line 167 "diy.brg"
 
 		break;
+	case 44: /* lval: slval */
+#line 168 "diy.brg"
+
+		break;
 	case 45: /* ilval: LOCAL */
-#line 171 "diy.brg"
+#line 172 "diy.brg"
 {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 		break;
 	case 46: /* ilval: ID */
-#line 172 "diy.brg"
+#line 173 "diy.brg"
 {fprintf(outfp, pfADDR, p->value.s);}
 		break;
 	case 47: /* ilval: INDEX(lvec,expr) */
-#line 173 "diy.brg"
+#line 174 "diy.brg"
 { if (isString(LEFT_CHILD(p)) == 1) fprintf(outfp, pfADD);
 								else fprintf(outfp, pfIMM pfMUL pfADD, 4);}
 		break;
 	case 48: /* iassign: iexpr */
-#line 177 "diy.brg"
+#line 178 "diy.brg"
 {fprintf(outfp, pfDUP);}
 		break;
 	case 49: /* iassign: rexpr */
-#line 178 "diy.brg"
+#line 179 "diy.brg"
 {fprintf(outfp, pfD2I pfDUP);}
 		break;
 	case 50: /* iexpr: INT */
-#line 179 "diy.brg"
+#line 180 "diy.brg"
 {fprintf(outfp, pfIMM, p->value.i);}
 		break;
 	case 51: /* iexpr: ATR(iassign,ilval) */
-#line 180 "diy.brg"
+#line 181 "diy.brg"
 {fprintf(outfp, pfSTORE);}
 		break;
 	case 52: /* iexpr: ADD(iexpr,iexpr) */
-#line 181 "diy.brg"
+#line 182 "diy.brg"
 {fprintf(outfp, pfADD);}
 		break;
 	case 53: /* iexpr: SUB(iexpr,iexpr) */
-#line 182 "diy.brg"
+#line 183 "diy.brg"
 {fprintf(outfp, pfSUB);}
 		break;
 	case 54: /* iexpr: DIV(iexpr,iexpr) */
-#line 183 "diy.brg"
+#line 184 "diy.brg"
 {fprintf(outfp, pfDIV);}
 		break;
 	case 55: /* iexpr: MOD(iexpr,iexpr) */
-#line 184 "diy.brg"
+#line 185 "diy.brg"
 {fprintf(outfp, pfMOD);}
 		break;
 	case 56: /* iexpr: MUL(iexpr,iexpr) */
-#line 185 "diy.brg"
+#line 186 "diy.brg"
 {fprintf(outfp, pfMUL);}
 		break;
 	case 57: /* rexpr: FACTORIAL(iexpr) */
-#line 186 "diy.brg"
+#line 187 "diy.brg"
 {fprintf(outfp, pfCALL pfTRASH pfDPUSH, "_factorial", 4);}
 		break;
 	case 58: /* iexpr: NOT(iexpr) */
-#line 187 "diy.brg"
+#line 188 "diy.brg"
 {fprintf(outfp, pfIMM pfEQ, 0);}
 		break;
 	case 59: /* iexpr: UMINUS(iexpr) */
-#line 188 "diy.brg"
+#line 189 "diy.brg"
 {fprintf(outfp, pfNEG);}
 		break;
 	case 60: /* iexpr: INCR(ilval) */
-#line 192 "diy.brg"
+#line 193 "diy.brg"
 {fprintf(outfp, pfDUP pfINCR pfLOAD, 1);}
 		break;
 	case 61: /* iexpr: DECR(ilval) */
-#line 193 "diy.brg"
+#line 194 "diy.brg"
 {fprintf(outfp, pfDUP pfDECR pfLOAD, 1);}
 		break;
 	case 62: /* iexpr: POSINC(ilval) */
-#line 194 "diy.brg"
+#line 195 "diy.brg"
 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfINCR, 1);}
 		break;
 	case 63: /* iexpr: POSDEC(ilval) */
-#line 195 "diy.brg"
+#line 196 "diy.brg"
 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfDECR, 1);}
 		break;
 	case 64: /* iexpr: REF(lval) */
-#line 196 "diy.brg"
+#line 197 "diy.brg"
 
 		break;
 	case 65: /* iexpr: PTR(ilval) */
-#line 200 "diy.brg"
+#line 201 "diy.brg"
 {if (LEFT_CHILD(p)->place == 2) { fprintf(outfp, pfLDCHR);}
                         else {fprintf(outfp, pfLOAD);}}
 		break;
 	case 66: /* iexpr: PTR(PTR(ilval)) */
-#line 202 "diy.brg"
+#line 203 "diy.brg"
 {fprintf(outfp, pfLOAD pfLOAD);}
 		break;
 	case 67: /* iexpr: PTR(PTR(slval)) */
-#line 203 "diy.brg"
+#line 204 "diy.brg"
 {fprintf(outfp, pfLOAD pfLDCHR);}
 		break;
 	case 68: /* iexpr: CALL(ID,arguments) */
-#line 206 "diy.brg"
+#line 207 "diy.brg"
 {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s),(int)((RIGHT_CHILD(p)->place)));
 p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 		break;
 	case 69: /* iexpr: CALL(ID,VOID) */
-#line 209 "diy.brg"
+#line 210 "diy.brg"
 {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s));
 									p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 		break;
 	case 70: /* cmp: iexpr */
-#line 213 "diy.brg"
+#line 214 "diy.brg"
 {}
 		break;
 	case 71: /* cmp: sexpr */
-#line 214 "diy.brg"
+#line 215 "diy.brg"
 {fprintf(outfp, pfLDCHR);}
 		break;
 	case 72: /* iexpr: LT(cmp,cmp) */
-#line 215 "diy.brg"
+#line 216 "diy.brg"
 {fprintf(outfp, pfLT);}
 		break;
 	case 73: /* iexpr: GT(cmp,cmp) */
-#line 216 "diy.brg"
+#line 217 "diy.brg"
 {fprintf(outfp, pfGT);}
 		break;
 	case 74: /* iexpr: GE(cmp,cmp) */
-#line 217 "diy.brg"
+#line 218 "diy.brg"
 {fprintf(outfp, pfGE);}
 		break;
 	case 75: /* iexpr: LE(cmp,cmp) */
-#line 218 "diy.brg"
+#line 219 "diy.brg"
 {fprintf(outfp, pfLE);}
 		break;
 	case 76: /* iexpr: NE(cmp,cmp) */
-#line 219 "diy.brg"
+#line 220 "diy.brg"
 {fprintf(outfp, pfNE);}
 		break;
 	case 77: /* iexpr: LOGIC_EQUAL(cmp,cmp) */
-#line 220 "diy.brg"
+#line 221 "diy.brg"
 {fprintf(outfp, pfEQ);}
 		break;
 	case 78: /* iexpr: AND(cmp,cmp) */
-#line 221 "diy.brg"
+#line 222 "diy.brg"
 {fprintf(outfp, pfAND);}
 		break;
 	case 79: /* iexpr: OR(cmp,cmp) */
-#line 222 "diy.brg"
+#line 223 "diy.brg"
 {fprintf(outfp, pfOR);}
 		break;
 	case 80: /* iexpr: LT(rexpr,rexpr) */
-#line 224 "diy.brg"
+#line 225 "diy.brg"
 {fprintf(outfp, pfDCMP pfIMM pfLT, 0);}
 		break;
 	case 81: /* iexpr: GT(rexpr,rexpr) */
-#line 225 "diy.brg"
+#line 226 "diy.brg"
 {fprintf(outfp, pfDCMP pfIMM pfGT, 0);}
 		break;
 	case 82: /* iexpr: GE(rexpr,rexpr) */
-#line 226 "diy.brg"
+#line 227 "diy.brg"
 {fprintf(outfp, pfDCMP pfIMM pfGE, 0);}
 		break;
 	case 83: /* iexpr: LE(rexpr,rexpr) */
-#line 227 "diy.brg"
+#line 228 "diy.brg"
 {fprintf(outfp, pfDCMP pfIMM pfLE, 0);}
 		break;
 	case 84: /* iexpr: LOGIC_EQUAL(rexpr,rexpr) */
-#line 228 "diy.brg"
+#line 229 "diy.brg"
 {fprintf(outfp, pfDCMP pfIMM pfEQ, 0);}
 		break;
 	case 85: /* iexpr: NE(rexpr,rexpr) */
-#line 229 "diy.brg"
+#line 230 "diy.brg"
 {fprintf(outfp, pfDCMP pfIMM pfNE, 0);}
 		break;
 	case 86: /* slval: LOCAL */
-#line 232 "diy.brg"
+#line 233 "diy.brg"
 {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 		break;
 	case 87: /* slval: ID */
-#line 233 "diy.brg"
+#line 234 "diy.brg"
 {fprintf(outfp, pfADDR, p->value.s);}
 		break;
 	case 88: /* slval: INDEX(lvec,expr) */
-#line 234 "diy.brg"
+#line 235 "diy.brg"
 { fprintf(outfp, pfIMM pfMUL pfADD, 4);}
 		break;
 	case 89: /* sexpr: STR */
-#line 236 "diy.brg"
+#line 237 "diy.brg"
 {	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl));
 					outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
 		break;
 	case 90: /* sexpr: PTR(slval) */
-#line 238 "diy.brg"
+#line 239 "diy.brg"
 {fprintf(outfp, pfLOAD);}
 		break;
 	case 91: /* sexpr: PTR(PTR(ilval)) */
-#line 239 "diy.brg"
+#line 240 "diy.brg"
 {fprintf(outfp, pfLOAD pfLOAD);}
 		break;
 	case 92: /* sassign: sexpr */
-#line 241 "diy.brg"
+#line 242 "diy.brg"
 {fprintf(outfp, pfDUP);}
 		break;
 	case 93: /* sassign: iexpr */
-#line 242 "diy.brg"
+#line 243 "diy.brg"
 {fprintf(outfp, pfDUP); /*assign to pointer or null (0)*/}
 		break;
 	case 94: /* sexpr: ATR(sassign,slval) */
-#line 243 "diy.brg"
+#line 244 "diy.brg"
 {fprintf(outfp, pfSTORE);}
 		break;
 	case 95: /* sexpr: CALL(ID,arguments) */
-#line 244 "diy.brg"
+#line 245 "diy.brg"
 {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s),
 													 (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 		break;
 	case 96: /* sexpr: CALL(ID,VOID) */
-#line 246 "diy.brg"
+#line 247 "diy.brg"
 {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s));
 							 	p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 		break;
 	case 97: /* rexpr: PTR(rlval) */
-#line 250 "diy.brg"
+#line 251 "diy.brg"
 {fprintf(outfp, pfLOAD2);}
 		break;
 	case 98: /* rexpr: PTR(PTR(ilval)) */
-#line 251 "diy.brg"
+#line 252 "diy.brg"
 {fprintf(outfp, pfLOAD pfLOAD2);}
 		break;
 	case 99: /* rlval: LOCAL */
-#line 252 "diy.brg"
+#line 253 "diy.brg"
 {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 		break;
 	case 100: /* rlval: ID */
-#line 253 "diy.brg"
+#line 254 "diy.brg"
 {fprintf(outfp, pfADDR, p->value.s);}
 		break;
 	case 101: /* rlval: INDEX(lvec,expr) */
-#line 254 "diy.brg"
+#line 255 "diy.brg"
 { fprintf(outfp, pfIMM pfMUL pfADD, 8);}
 		break;
 	case 102: /* rexpr: ATR(rassign,rlval) */
-#line 255 "diy.brg"
+#line 256 "diy.brg"
 {fprintf(outfp, pfSTORE2);}
 		break;
 	case 103: /* rassign: rexpr */
-#line 256 "diy.brg"
+#line 257 "diy.brg"
 {fprintf(outfp, pfDUP2);}
 		break;
 	case 104: /* rexpr: REAL */
-#line 257 "diy.brg"
+#line 258 "diy.brg"
 {lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL pfDOUBLE, mklbl(lbl), p->value.r);
 					fprintf(outfp, pfTEXT pfADDR pfLOAD2, mklbl(lbl));}
 		break;
 	case 105: /* rexpr: ADD(rexpr,rexpr) */
-#line 259 "diy.brg"
+#line 260 "diy.brg"
 {fprintf(outfp, pfDADD);}
 		break;
 	case 106: /* rexpr: UMINUS(rexpr) */
-#line 260 "diy.brg"
+#line 261 "diy.brg"
 {fprintf(outfp, pfDNEG);}
 		break;
 	case 107: /* rexpr: SUB(rexpr,rexpr) */
-#line 261 "diy.brg"
+#line 262 "diy.brg"
 {fprintf(outfp, pfDSUB);}
 		break;
 	case 108: /* rexpr: MUL(rexpr,rexpr) */
-#line 262 "diy.brg"
+#line 263 "diy.brg"
 {fprintf(outfp, pfDMUL);}
 		break;
 	case 109: /* rexpr: DIV(rexpr,rexpr) */
-#line 263 "diy.brg"
+#line 264 "diy.brg"
 {fprintf(outfp, pfDDIV);}
 		break;
 	case 110: /* rexpr: iexpr */
-#line 264 "diy.brg"
+#line 265 "diy.brg"
 {fprintf(outfp, pfI2D);}
 		break;
 	case 111: /* rexpr: CALL(ID,arguments) */
-#line 265 "diy.brg"
+#line 266 "diy.brg"
 {fprintf(outfp, pfCALL pfTRASH pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s),
 														 (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8 : 4;}
 		break;
 	case 112: /* rexpr: CALL(ID,VOID) */
-#line 267 "diy.brg"
+#line 268 "diy.brg"
 { fprintf(outfp, pfCALL pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s));
 									 p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 		break;
 	case 113: /* arguments: ARGS(expr,NIL) */
-#line 272 "diy.brg"
+#line 273 "diy.brg"
 {p->place = LEFT_CHILD(p)->place;}
 		break;
 	case 114: /* arguments: ARGS(expr,arguments) */
-#line 273 "diy.brg"
+#line 274 "diy.brg"
 {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place;}
 		break;
 	case 115: /* expr: AND(and,iexpr) */
-#line 276 "diy.brg"
+#line 277 "diy.brg"
 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
 		break;
 	case 116: /* and: iexpr */
-#line 277 "diy.brg"
+#line 278 "diy.brg"
 { p->place = ++lbl; fprintf(outfp, pfDUP pfJZ pfTRASH, mklbl(p->place), 4); }
 		break;
 	case 117: /* expr: OR(or,iexpr) */
-#line 278 "diy.brg"
+#line 279 "diy.brg"
 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
 		break;
 	case 118: /* or: iexpr */
-#line 279 "diy.brg"
+#line 280 "diy.brg"
 { p->place = ++lbl; fprintf(outfp, pfDUP pfJNZ pfTRASH, mklbl(p->place), 4); }
 		break;
 	case 119: /* cond: LT(cmp,cmp) */
-#line 283 "diy.brg"
+#line 284 "diy.brg"
 {p->place = ++lbl; fprintf(outfp, pfJGE, mklbl(p->place));}
 		break;
 	case 120: /* cond: GT(cmp,cmp) */
-#line 284 "diy.brg"
+#line 285 "diy.brg"
 {p->place = ++lbl; fprintf(outfp, pfJLE, mklbl(p->place));}
 		break;
 	case 121: /* cond: LE(cmp,cmp) */
-#line 285 "diy.brg"
+#line 286 "diy.brg"
 {p->place = ++lbl; fprintf(outfp, pfJGT, mklbl(p->place));}
 		break;
 	case 122: /* cond: GE(cmp,cmp) */
-#line 286 "diy.brg"
+#line 287 "diy.brg"
 {p->place = ++lbl; fprintf(outfp, pfJLT, mklbl(p->place));}
 		break;
 	case 123: /* cond: LOGIC_EQUAL(cmp,cmp) */
-#line 287 "diy.brg"
+#line 288 "diy.brg"
 {p->place = ++lbl; fprintf(outfp, pfJNE, mklbl(p->place));}
 		break;
 	case 124: /* cond: NE(cmp,cmp) */
-#line 288 "diy.brg"
+#line 289 "diy.brg"
 {p->place = ++lbl; fprintf(outfp, pfJEQ, mklbl(p->place));}
 		break;
 	case 125: /* cond: expr */
-#line 289 "diy.brg"
+#line 290 "diy.brg"
 {p->place = ++lbl; fprintf(outfp, pfJZ, mklbl(p->place));}
 		break;
 	case 126: /* base: ATR(ADD(PTR(ilval),INT),LOCAL) */
-#line 292 "diy.brg"
+#line 293 "diy.brg"
 {fprintf(outfp, pfINCR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
 		break;
 	case 127: /* base: ATR(SUB(PTR(ilval),INT),LOCAL) */
-#line 293 "diy.brg"
+#line 294 "diy.brg"
 {fprintf(outfp, pfDECR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
 		break;
 	case 128: /* base: ATR(ADD(INT,PTR(ilval)),LOCAL) */
-#line 294 "diy.brg"
+#line 295 "diy.brg"
 {fprintf(outfp, pfINCR, LEFT_CHILD(LEFT_CHILD(p))->value.i);}
 		break;
 	case 129: /* base: ATR(ADD(PTR(ilval),INT),ID) */
-#line 297 "diy.brg"
+#line 298 "diy.brg"
 {fprintf(outfp, pfINCR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
 		break;
 	case 130: /* base: ATR(SUB(PTR(ilval),INT),ID) */
-#line 298 "diy.brg"
+#line 299 "diy.brg"
 {fprintf(outfp, pfDECR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
 		break;
 	case 131: /* base: ATR(ADD(INT,PTR(ilval)),ID) */
-#line 299 "diy.brg"
+#line 300 "diy.brg"
 {fprintf(outfp, pfINCR, LEFT_CHILD(LEFT_CHILD(p))->value.i);}
 		break;
 	case 132: /* base: ATR(ADD(PTR(ilval),INT),INDEX(LOCAL,INT)) */
-#line 302 "diy.brg"
+#line 303 "diy.brg"
 {fprintf(outfp, pfINCR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
 		break;
 	case 133: /* base: ATR(SUB(PTR(ilval),INT),INDEX(LOCAL,INT)) */
-#line 303 "diy.brg"
+#line 304 "diy.brg"
 {fprintf(outfp, pfDECR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
 		break;
 	case 134: /* base: ATR(ADD(INT,PTR(ilval)),INDEX(LOCAL,INT)) */
-#line 304 "diy.brg"
+#line 305 "diy.brg"
 {fprintf(outfp, pfINCR, LEFT_CHILD(LEFT_CHILD(p))->value.i);}
 		break;
 	case 135: /* base: ATR(ADD(PTR(ilval),INT),INDEX(ID,INT)) */
-#line 306 "diy.brg"
+#line 307 "diy.brg"
 {fprintf(outfp, pfINCR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
 		break;
 	case 136: /* base: ATR(SUB(PTR(ilval),INT),INDEX(ID,INT)) */
-#line 307 "diy.brg"
+#line 308 "diy.brg"
 {fprintf(outfp, pfDECR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
 		break;
 	case 137: /* base: ATR(ADD(INT,PTR(ilval)),INDEX(ID,INT)) */
-#line 308 "diy.brg"
+#line 309 "diy.brg"
 {fprintf(outfp, pfINCR, LEFT_CHILD(LEFT_CHILD(p))->value.i);}
 		break;
 	default: break;
@@ -3190,7 +3191,7 @@ int yyselect(NODEPTR_TYPE p)
 }
 
 
-#line 312 "diy.brg"
+#line 313 "diy.brg"
 
 #include "y.tab.h"
 extern void yyerror(const char*);

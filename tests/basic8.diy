@@ -21,8 +21,8 @@ public integer entry (integer argc, string *argv, string *envp) {
 				printi(k)
 				prints(" and j -> ")
 				printi(j)
-				prints(" i will now continue 1 \n")
-				continue 1;
+				prints(" i will now continue 2 \n")
+				continue 2;
 				}
 				prints("k -> ")
 				printi(k);

@@ -128,8 +128,9 @@ begin: START 1 { fprintf(outfp, pfLABEL, mklbl(++lbl)); lbls[dblcnt].b_lbl = lbl
 for: INSTR(expr, forbody)
 forbody: FOR(forin, forinstr)  1{fprintf(outfp, pfLABEL, mklbl(lbls[--dblcnt].e_lbl));}
 forinstr: INSTR(forstmt, expr) 1 {fprintf(outfp, pfJMP, mklbl(lbls[dblcnt - 1].b_lbl));}
-forstmt: stmt 1 {}
-forin: IN(forstart, expr) 1 {fprintf(outfp, pfJZ, mklbl(++lbl)); lbls[dblcnt].e_lbl = lbl; brklbl[brkcnt++] = lbls[dblcnt++].e_lbl;}
+forstmt: stmt 1 {fprintf(outfp, pfLABEL, mklbl(lbls[dblcnt - 1].cnt_lbl));}
+forin: IN(forstart, expr) 1 {fprintf(outfp, pfJZ, mklbl(++lbl)); lbls[dblcnt].e_lbl = lbl; brklbl[brkcnt++] = lbls[dblcnt].e_lbl;
+														lbls[dblcnt].br_lbl = lbl; lbls[dblcnt++].cnt_lbl = ++lbl;}
 forstart: START 1 {fprintf(outfp, pfLABEL, mklbl(++lbl)); lbls[dblcnt].b_lbl = lbl; }
 
 
