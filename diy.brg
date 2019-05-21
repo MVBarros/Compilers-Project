@@ -8,18 +8,13 @@
 #include "postfix.h"
 
 
-/*
-TODO: Variaveis globais (hoje a noite) (done except const str)
-			Ponteiros (sabado)
-			Otimizacoes (amanha fazer em ES e antes do autocarro)
-			Felicidade (TBD)
-*/
-
 
 /*for cycles*/
 typedef struct double_lbl {
 	int b_lbl;
 	int e_lbl;
+	int br_lbl;
+	int cnt_lbl;
 } doublelbl;
 
 static doublelbl lbls[100];
@@ -124,7 +119,9 @@ while: WHILE(do, expr) 1 {dblcnt--; brkcnt--; fprintf(outfp, pfJNZ pfLABEL,
 						mklbl(lbls[dblcnt].b_lbl), mklbl(lbls[dblcnt].e_lbl)); }
 do: DO(begin,stmt) 1 {}
 begin: START 1 { fprintf(outfp, pfLABEL, mklbl(++lbl)); lbls[dblcnt].b_lbl = lbl; lbls[dblcnt].e_lbl = ++lbl;
-				brklbl[brkcnt++] = lbls[dblcnt++].e_lbl; }
+				brklbl[brkcnt++] = lbls[dblcnt].e_lbl;
+				lbls[dblcnt].br_lbl = lbls[dblcnt].e_lbl; lbls[dblcnt++].cnt_lbl = lbls[dblcnt].b_lbl;
+			 }
 
 
 %!for (upto and downto)
@@ -138,8 +135,8 @@ forstart: START 1 {fprintf(outfp, pfLABEL, mklbl(++lbl)); lbls[dblcnt].b_lbl = l
 
 %!stmt is a base or a break
 stmt: base
-stmt: BREAK 1 { fprintf(outfp, pfJMP, mklbl(brklbl[brkcnt - p->value.i])); }
-stmt: CONTINUE 1 { fprintf(outfp, pfJMP, mklbl(brklbl[p->value.i])); }
+stmt: BREAK 1 { fprintf(outfp, pfJMP, mklbl(lbls[dblcnt - p->value.i].br_lbl)); }
+stmt: CONTINUE 1 { fprintf(outfp, pfJMP, mklbl(lbls[dblcnt - p->value.i].cnt_lbl)); }
 
 
 %!end of an expression is a base
@@ -173,7 +170,7 @@ lval: slval
 %!lval is an expression on the left side of an assignment
 ilval: LOCAL isInt {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 ilval: ID isInt {fprintf(outfp, pfADDR, p->value.s);}
-ilval: INDEX(lvec, expr) isInt { if (isString(LEFT_CHILD(p)) == 1) fprintf(outfp, pfADD); 
+ilval: INDEX(lvec, expr) isInt { if (isString(LEFT_CHILD(p)) == 1) fprintf(outfp, pfADD);
 								else fprintf(outfp, pfIMM pfMUL pfADD, 4);}
 
 
@@ -196,17 +193,17 @@ iexpr: INCR(ilval) 1 {fprintf(outfp, pfDUP pfINCR pfLOAD, 1);}
 iexpr: DECR(ilval) 1 {fprintf(outfp, pfDUP pfDECR pfLOAD, 1);}
 iexpr: POSINC(ilval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfINCR, 1);}
 iexpr: POSDEC(ilval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfDECR, 1);}
-iexpr: REF(lval) 
+iexpr: REF(lval)
 
 
 %! assign integers to IDS
 iexpr: PTR(ilval) isInt {if (LEFT_CHILD(p)->place == 2) { fprintf(outfp, pfLDCHR);}
-                        else {fprintf(outfp, pfLOAD);}}                       
+                        else {fprintf(outfp, pfLOAD);}}
 iexpr: PTR(PTR(ilval)) isInt {fprintf(outfp, pfLOAD pfLOAD);}
 iexpr: PTR(PTR(slval)) isInt {fprintf(outfp, pfLOAD pfLDCHR);}
 
 %!integer expression is a function that returns int
-iexpr: CALL(ID, arguments) isInt {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s),(int)((RIGHT_CHILD(p)->place))); 
+iexpr: CALL(ID, arguments) isInt {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s),(int)((RIGHT_CHILD(p)->place)));
 p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
 iexpr: CALL(ID, VOID) isInt {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s));
@@ -344,7 +341,7 @@ void function(int pub, Node *type, char *name, Node *body)
 			fflush(stdout);
   		fprintf(outfp, pfTEXT pfALIGN);
   		if(pub) {
-  		 fprintf(outfp, pfGLOBL, mkfunc(name), pfFUNC); 
+  		 fprintf(outfp, pfGLOBL, mkfunc(name), pfFUNC);
   		}
   		fprintf(outfp, pfLABEL pfENTER, mkfunc(name), - localPos * (pfWORD/4));
   		functionReturnType = type->value.i;

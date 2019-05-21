@@ -124,13 +124,11 @@ param	: tipo ID               { $$ = binNode(PARAM, $1, strNode(ID, $2));
                                   if (IDlevel() == 1) {
                                   	fpar[++fpar[0]] = $1->value.i;
                                   	IDnew($1->value.i, $2, globalPos);
-                          			printf("globalPos: %d\n", globalPos);
                                   	globalPos += $1->value.i == 3 ? 8 : 4;
                                   	}
                                   else {
                                   	localPos -= $1->value.i == 3 ? 8 : 4;
                                   	IDnew($1->value.i, $2, localPos);
-                          			printf("localPos: %d\n", localPos);
 
                                   }
 
@@ -247,7 +245,7 @@ char **yynames =
 
 void enter(int pub, int typ, char *name) {
 	globalPos = 8;
-	localPos = 0; 
+	localPos = 0;
 	fpar = malloc(32); /* 31 arguments, at most */
 	fpar[0] = 0; /* argument count */
 	if (IDfind(name, (long*)IDtest) < 20)
