@@ -403,21 +403,26 @@ void assign(int pub, int cnst, Node* type, char* name, Node* value) {
 		/*cnst must be RODATA*/
 		fprintf(outfp, "%s", memseg);
 		fprintf(outfp, pfALIGN);
-		fprintf(outfp, pfLABEL, name);
 		if (value->info == 1) {
 			/*integer*/
+			fprintf(outfp, pfLABEL, name);
 			fprintf(outfp, pfINTEGER, value->value.i);
 		}
 
 		else if (value->info == 3) {
 			/*double*/
+			fprintf(outfp, pfLABEL, name);
 			fprintf(outfp, pfDOUBLE, value->value.r);
 		}
 		else if (value->info == 2 || value->info == 7) {
 			if(strcmp(memseg, pfRODATA) == 0) {
+				fprintf(outfp, pfLABEL, mklbl(++lbl));
 				outstr(value->value.s);
+				fprintf(outfp, pfLABEL pfID, name, mklbl(lbl));
+
 			}
 			else {
+			fprintf(outfp, pfLABEL, name);
 			char *l = mklbl(++lbl);
 			fprintf(outfp, pfRODATA pfALIGN pfLABEL, l);
 			outstr(value->value.s);
@@ -427,6 +432,7 @@ void assign(int pub, int cnst, Node* type, char* name, Node* value) {
 		}
 		else if (value->info > 10) {
 			/*value is an id*/
+			fprintf(outfp, pfLABEL, name);
 			fprintf(outfp, pfID, value->value.s);
 		}
 
