@@ -9,14 +9,14 @@
 
 extern int yylex();
 void yyerror(char *s);
-//void declare(int pub, int cnst, Node *type, char *name, Node *value);
 void enter(int pub, int typ, char *name);
 int checkargs(char *name, Node *args);
 int nostring(Node *arg1, Node *arg2);
 int intonly(Node *arg, int);
 int noassign(Node *arg1, Node *arg2);
 extern void function(int pub, Node *type, char *name, Node *body);
-extern void declare(int pub, int cnst, Node *type, char *name, Node *value);
+
+void declare(int pub, int cnst, Node *type, char *name, Node *value);
 extern void assign(int pub, int cnst, Node *type, char *name, Node *value);
 
 
@@ -30,7 +30,6 @@ extern FILE* outfp;
 int localPos = 0;
 int globalPos = 8;
 
-int placeofReturn = 0;
 
 %}
 
@@ -254,10 +253,24 @@ void enter(int pub, int typ, char *name) {
 	if (typ != 4) {
 		localPos -= typ == 3 ? 8 : 4;
 		IDnew(typ, name, localPos);
-		placeofReturn = localPos;
-
 	}
 
+}
+
+void declare(int pub, int cnst, Node *type, char *name, Node *value)
+{
+  int typ;
+  if (!value) {
+    if (!pub && cnst) yyerror("local constants must be initialised");
+
+    return;
+  }
+  if (value->attrib = INT && value->value.i == 0 && type->value.i > 10)
+  	return; /* NULL pointer */
+  if ((typ = value->info) % 10 > 5) typ -= 5;
+
+  if (type->value.i != typ)
+    yyerror("wrong types in initialization");
 }
 
 int checkargs(char *name, Node *args) {
