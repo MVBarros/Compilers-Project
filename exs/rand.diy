@@ -1,5 +1,5 @@
 integer seed := 100003
-const integer mod := 1000000
+integer mod := 1000000
 public void srand(integer s) {
 	if s >= 0 & s < mod then
 		seed := s;
