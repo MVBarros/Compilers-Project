@@ -27,6 +27,24 @@ static int extcnt;
 extern int localPos;
 int functionReturnType;
 
+
+int strcmpFlag = 0;
+void addStrcmp() {
+	if (!strcmpFlag) {
+		strcmpFlag = 1;
+		extrns[extcnt++] = "_strcmp";
+	}
+}
+
+
+int factorialFlag = 0;
+void addFactorial() {
+	if (!factorialFlag) {
+		factorialFlag = 1;
+		extrns[extcnt++] = "_factorial";
+	}
+}
+
 int lbl;
 char *mklbl(int n) {
   static char buf[20];
@@ -171,7 +189,7 @@ iexpr: SUB(iexpr, iexpr) 1 {fprintf(outfp, pfSUB);}
 iexpr: DIV(iexpr, iexpr) 1 {fprintf(outfp, pfDIV);}
 iexpr: MOD(iexpr, iexpr) 1 {fprintf(outfp, pfMOD);}
 iexpr: MUL(iexpr, iexpr) 1 {fprintf(outfp, pfMUL);}
-rexpr: FACTORIAL(iexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfDPUSH, "_factorial", 4);}
+rexpr: FACTORIAL(iexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfDPUSH, "_factorial", 4); addFactorial();}
 iexpr: NOT(iexpr) 1 {fprintf(outfp, pfIMM pfEQ, 0);}
 iexpr: UMINUS(iexpr) 1 {fprintf(outfp, pfNEG);}
 
@@ -208,6 +226,14 @@ iexpr: NE(cmp, cmp) 1 {fprintf(outfp, pfNE);}
 iexpr: LOGIC_EQUAL(cmp, cmp) 1 {fprintf(outfp, pfEQ);}
 iexpr: AND(cmp, cmp) 1 {fprintf(outfp, pfAND);}
 iexpr: OR (cmp, cmp) 1 {fprintf(outfp, pfOR);}
+
+iexpr: LT(sexpr, sexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH pfIMM pfLT, "_strcmp", 8, 0); addStrcmp();}
+iexpr: GT(sexpr, sexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH pfIMM pfGT, "_strcmp", 8, 0); addStrcmp();}
+iexpr: GE(sexpr, sexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH pfIMM pfGE, "_strcmp", 8, 0); addStrcmp();}
+iexpr: LE(sexpr, sexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH pfIMM pfLE, "_strcmp", 8, 0); addStrcmp();}
+iexpr: NE(sexpr, sexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH pfIMM pfNE, "_strcmp", 8, 0); addStrcmp();}
+iexpr: LOGIC_EQUAL(sexpr, sexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH pfIMM pfEQ, "_strcmp", 8, 0); addStrcmp();}
+
 
 %! comparisons between real expressions return int
 iexpr: LT(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfLT, 0);}
