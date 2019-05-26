@@ -10,22 +10,36 @@ public integer entry (integer argc, string *argv, string *envp) {
 
 
 		for j in 0 upto 10 step 1 do {
+			prints("j -> ")
 			printi(j);
 			println();
+			println();
+
 			for k in 0 upto 10 step 1 do {
-				if (k = 6) then continue 2;
+				if (k = 6 & j > 4) then {
+				prints("with k -> ")
+				printi(k)
+				prints(" and j -> ")
+				printi(j)
+				prints(" i will now continue 2 \n")
+				continue 2;
+				}
+				prints("k -> ")
 				printi(k);
 				println();
+				println();
 
-		prints("3rd if");
+		prints("3rd for\n");
 			}
 
-		prints("2nd if");
+		prints("2nd for\n");
 		}
-		prints("1st if");
-		println();
+		prints("1st for\n");
+		prints("i -> ")
 		printi(i);
 		println();
+		println();
+
 	}
 	entry:= 0;
 };

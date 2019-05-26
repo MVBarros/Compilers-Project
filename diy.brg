@@ -8,18 +8,12 @@
 #include "postfix.h"
 
 
-/*
-TODO: Variaveis globais (hoje a noite) (done except const str)
-			Ponteiros (sabado)
-			Otimizacoes (amanha fazer em ES e antes do autocarro)
-			Felicidade (TBD)
-*/
-
-
 /*for cycles*/
 typedef struct double_lbl {
 	int b_lbl;
 	int e_lbl;
+	int br_lbl;
+	int cnt_lbl;
 } doublelbl;
 
 static doublelbl lbls[100];
@@ -27,12 +21,29 @@ static int dblcnt = 0;
 extern FILE *outfp;
 char *dupstr(const char *s);
 
-static long brklbl[20], brkcnt; /* break labels */
-/* label _L0 is a break without a while/switch) */
 
 static char *extrns[100]; /* emit externs at the end only */
 static int extcnt;
 extern int localPos;
+int functionReturnType;
+
+
+int strcmpFlag = 0;
+void addStrcmp() {
+	if (!strcmpFlag) {
+		strcmpFlag = 1;
+		extrns[extcnt++] = "_strcmp";
+	}
+}
+
+
+int factorialFlag = 0;
+void addFactorial() {
+	if (!factorialFlag) {
+		factorialFlag = 1;
+		extrns[extcnt++] = "_factorial";
+	}
+}
 
 int lbl;
 char *mklbl(int n) {
@@ -46,8 +57,6 @@ static void outstr(char *s) {
   fprintf(outfp, pfCHAR, 0);
 }
 
-int functionReturnType;
-
 static char *mkfunc(char *s) {
   static char buf[80];
   strcpy(buf, "_");
@@ -55,34 +64,29 @@ static char *mkfunc(char *s) {
   return buf;
 }
 
-int isIntFunction(Node* p) {return p->info == 1 ? 1 : MAX_COST;}
-int isInt(Node* p) {return ((p->info == 1) || (p->info == 6)) ? 1 : MAX_COST;}
-int isIntPointer(Node* p) {return ((p->info == 11) || (p->info == 16)) ? 1 : MAX_COST;}
 
-
-int isRealFunction(Node* p) {return p->info == 3 ? 1 : MAX_COST;}
+/*all pointers are integers*/
+int isInt(Node* p) {return ((p->info == 1) || (p->info == 6) || (p->info > 10 )) ? 1 : MAX_COST;}
 int isReal(Node* p) {return((p->info == 3) || (p->info == 8)) ? 1 : MAX_COST;}
-int isRealPointer(Node* p) {return ((p->info == 13) || (p->info == 18)) ? 1 : MAX_COST;}
-
-
 int isString(Node* p) {return ((p->info == 2) || (p->info == 7)) ? 1 : MAX_COST;}
-int isStringFunction(Node* p) {return p->info == 2 ? 1 : MAX_COST;}
-int isStringPointer(Node* p) {return ((p->info == 12) || (p->info == 17)) ? 1 : MAX_COST;}
+int isVoid(Node* p) {return (p->info == 4) ? 1 : MAX_COST;}
 
+int compareNodeLeft(Node* p) {return compareNode(LEFT_CHILD(LEFT_CHILD(LEFT_CHILD(p))), RIGHT_CHILD(p), 0) ? MAX_COST : 1;}
+int compareNodeRight(Node* p) {return compareNode(LEFT_CHILD(RIGHT_CHILD(LEFT_CHILD(p))), RIGHT_CHILD(p), 0) ? MAX_COST : 1;}
 
 
 %}
 %term INSTR=';' BLOCK='{' ARGB='(' NEXT=','
 %term FACTORIAL='!' ADD='+' SUB='-' MUL='*' DIV='/' MOD='%'
-%term LT='<' GT='>' LOGIC_EQUAL='=' AND='&' OR='|' LOGIC_NOT='~'
+%term LT='<' GT='>' LOGIC_EQUAL='=' AND='&' OR='|' LOGIC_NOT='~' ALLOC='#'
 %term INDEX='['
 %include "y.tab.h"
 %%
 
-finit: ARGB(bloco, params) 1 {if (functionReturnType != 4) {if (functionReturnType != 3)fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8);
-															else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}}
-finit: ARGB(bloco, NIL) 1 {if (functionReturnType != 4) {if (functionReturnType != 3)fprintf(outfp, pfLOCAL pfLOAD pfPOP, 8);
-															else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, 8);}}
+finit: ARGB(bloco, params) 1 {if (functionReturnType != 4) {if (functionReturnType != 3)fprintf(outfp, pfLOCAL pfLOAD pfPOP, -4);
+															else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, -8);}}
+finit: ARGB(bloco, NIL) 1 {if (functionReturnType != 4) {if (functionReturnType != 3)fprintf(outfp, pfLOCAL pfLOAD pfPOP, -4);
+															else if(functionReturnType == 3) fprintf(outfp, pfLOCAL pfLOAD2 pfDPOP, -8);}}
 
 params: param
 params:NEXT(params, param)
@@ -103,117 +107,81 @@ tipo: NUMBER
 list: base
 list: LIST(list, base)
 
+
 %! simple if (no else): uses only one label
-if: IF(cond, stmt) {fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
-cond: expr 1 {p->place = ++lbl; fprintf(outfp, pfJZ, mklbl(p->place));}
+if: IF(cond, stmt) 1{fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
 
 
 %! if-else
 ifelse:	ELSE(cond2,stmt)	1 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
 cond2:	IF(cond,stmt)	1 { p->place = ++lbl; fprintf(outfp, pfJMP pfLABEL,
-mklbl(p->place), mklbl(LEFT_CHILD(p)->place)); }
+							mklbl(p->place), mklbl(LEFT_CHILD(p)->place)); }
 
 
 %! while (do while)
-while: WHILE(do, expr) 1 {dblcnt--; brkcnt--; fprintf(outfp, pfJNZ pfLABEL,
-													mklbl(lbls[dblcnt].b_lbl), mklbl(lbls[dblcnt].e_lbl)); }
+while: WHILE(do, expr) 1 {dblcnt--; fprintf(outfp, pfJNZ pfLABEL,
+						mklbl(lbls[dblcnt].b_lbl), mklbl(lbls[dblcnt].e_lbl)); }
 do: DO(begin,stmt) 1 {}
 begin: START 1 { fprintf(outfp, pfLABEL, mklbl(++lbl)); lbls[dblcnt].b_lbl = lbl; lbls[dblcnt].e_lbl = ++lbl;
-				brklbl[brkcnt++] = lbls[dblcnt++].e_lbl; }
+				lbls[dblcnt].br_lbl = lbls[dblcnt].e_lbl; lbls[dblcnt++].cnt_lbl = lbls[dblcnt].b_lbl;
+			 }
 
 
 %!for (upto and downto)
 for: INSTR(expr, forbody)
-forbody: FOR(forin, forinstr)  {fprintf(outfp, pfLABEL, mklbl(lbls[--dblcnt].e_lbl));}
+forbody: FOR(forin, forinstr)  1{fprintf(outfp, pfLABEL, mklbl(lbls[--dblcnt].e_lbl));}
 forinstr: INSTR(forstmt, expr) 1 {fprintf(outfp, pfJMP, mklbl(lbls[dblcnt - 1].b_lbl));}
-forstmt: stmt 1 {}
-forin: IN(forstart, expr) 1 {fprintf(outfp, pfJZ, mklbl(++lbl)); lbls[dblcnt].e_lbl = lbl; brklbl[brkcnt++] = lbls[dblcnt++].e_lbl;}
-
-
+forstmt: stmt 1 {fprintf(outfp, pfLABEL, mklbl(lbls[dblcnt - 1].cnt_lbl));}
+forin: IN(forstart, expr) 1 {fprintf(outfp, pfJZ, mklbl(++lbl)); lbls[dblcnt].e_lbl = lbl;
+														lbls[dblcnt].br_lbl = lbl; lbls[dblcnt++].cnt_lbl = ++lbl;}
 forstart: START 1 {fprintf(outfp, pfLABEL, mklbl(++lbl)); lbls[dblcnt].b_lbl = lbl; }
 
 
 %!stmt is a base or a break
 stmt: base
-stmt: BREAK 1 { fprintf(outfp, pfJMP, mklbl(brklbl[brkcnt - p->value.i])); }
-stmt: CONTINUE 1 { fprintf(outfp, pfJMP, mklbl(brklbl[p->value.i])); }
+stmt: BREAK 1 { fprintf(outfp, pfJMP, mklbl(lbls[dblcnt - p->value.i].br_lbl)); }
+stmt: CONTINUE 1 { fprintf(outfp, pfJMP, mklbl(lbls[dblcnt - p->value.i].cnt_lbl)); }
 
 
 %!end of an expression is a base
-base: expr 1 {fprintf(outfp, pfTRASH, (int)p->place); }
+base: expr 1 {if (p->place != 0) fprintf(outfp, pfTRASH, (int)p->place); }
 base: if
 base: ifelse
 base: while
 base: for
 base: bloco
-
-
+base: ALLOC(balloc, lval) 1 {fprintf(outfp, pfSTORE);}
+balloc: expr 1 {fprintf(outfp, pfALLOC pfSP pfSTORE pfSP);}
 
 
 %!an expression is any type of expression
 expr: iexpr {p->place = 4;}
 expr: sexpr {p->place = 4;}
 expr: rexpr {p->place = 8;}
-expr: iptrexpr {p->place = 4;}
-expr: sptrexpr {p->place = 4;}
-expr: rptrexpr {p->place = 4;}
 
-%!any type of function
-expr: CALL(ID, arguments) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s),
-														 (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
-expr: CALL(ID, VOID) 1 {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s));
-												p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+
+%!void functions are just expressions
+expr: CALL(ID, arguments) isVoid {fprintf(outfp, pfCALL pfTRASH, mkfunc(LEFT_CHILD(p)->value.s),
+														 (int)((RIGHT_CHILD(p)->place))); p->place = 0;}
+expr: CALL(ID, VOID) isVoid {fprintf(outfp, pfCALL, mkfunc(LEFT_CHILD(p)->value.s));
+												p->place = 0;}
+
+%! for index operation
+lvec: lval 1 {fprintf(outfp, pfLOAD);}
+lval: ilval
+lval: rlval
+lval: slval
 
 
 %!lval is an expression on the left side of an assignment
 ilval: LOCAL isInt {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
 ilval: ID isInt {fprintf(outfp, pfADDR, p->value.s);}
-ilval: INDEX(slvec, expr) isInt {fprintf(outfp, pfADD);}
+ilval: INDEX(lvec, expr) isInt { if (isString(LEFT_CHILD(p)) == 1) fprintf(outfp, pfADD);
+								else fprintf(outfp, pfIMM pfMUL pfADD, 4);}
 
 
-rlval: LOCAL isReal {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
-rlval: ID isReal {fprintf(outfp, pfADDR, p->value.s);}
-rlvec: rlval 1 {fprintf(outfp, pfLOAD);}
-rlval: INDEX(rlvec, expr) isReal { fprintf(outfp, pfIMM pfMUL pfADD, 8);}
-
-
-slval: LOCAL isString {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
-slval: ID isString {fprintf(outfp, pfADDR, p->value.s);}
-slvec: slval 1 {fprintf(outfp, pfLOAD);}
-
-%! expressions relating to strings
-sexpr:	STR	1	{	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl));
-					outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
-
-sexpr: PTR(slval) 1 {fprintf(outfp, pfLOAD);}
-
-sassign: sexpr 1 {fprintf(outfp, pfDUP);}
-sassign: iexpr 1 {fprintf(outfp, pfDUP); /*assign to null (0)*/}
-sassign: iptrexpr 1 {fprintf(outfp, pfDUP); /*assign to pointer type*/}
-
-sexpr: ATR(sassign, slval) 1 {fprintf(outfp, pfSTORE);}
-sexpr: CALL(ID, arguments) isStringFunction {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s),
-													 (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
-sexpr: CALL(ID, VOID) isStringFunction {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s));
-																			 p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
-
-
-scmp: sexpr {fprintf(outfp, pfLDCHR);}
-iexpr: LT(scmp, scmp) 1 {fprintf(outfp, pfLT);}
-iexpr: GT(scmp, scmp) 1 {fprintf(outfp, pfGT);}
-iexpr: GE(scmp, scmp) 1 {fprintf(outfp, pfGE);}
-iexpr: LE(scmp, scmp) 1 {fprintf(outfp, pfLE);}
-iexpr: NE(scmp, scmp) 1 {fprintf(outfp, pfNE);}
-iexpr: LOGIC_EQUAL(scmp, scmp) 1 {fprintf(outfp, pfEQ);}
-iexpr: AND(scmp, scmp) 1 {fprintf(outfp, pfAND);}
-iexpr: OR (scmp, scmp) 1 {fprintf(outfp, pfOR);}
-
-%! expressions relating to integers
 iassign: iexpr 1 {fprintf(outfp, pfDUP);}
-
-%! integer := real number
 iassign: rexpr 1 {fprintf(outfp, pfD2I pfDUP);}
-
 iexpr: INT 1 {fprintf(outfp, pfIMM, p->value.i);}
 iexpr: ATR(iassign, ilval) 1 {fprintf(outfp, pfSTORE);}
 iexpr: ADD(iexpr, iexpr) 1 {fprintf(outfp, pfADD);}
@@ -221,15 +189,7 @@ iexpr: SUB(iexpr, iexpr) 1 {fprintf(outfp, pfSUB);}
 iexpr: DIV(iexpr, iexpr) 1 {fprintf(outfp, pfDIV);}
 iexpr: MOD(iexpr, iexpr) 1 {fprintf(outfp, pfMOD);}
 iexpr: MUL(iexpr, iexpr) 1 {fprintf(outfp, pfMUL);}
-iexpr: LT(iexpr, iexpr) 1 {fprintf(outfp, pfLT);}
-iexpr: GT(iexpr, iexpr) 1 {fprintf(outfp, pfGT);}
-iexpr: GE(iexpr, iexpr) 1 {fprintf(outfp, pfGE);}
-iexpr: LE(iexpr, iexpr) 1 {fprintf(outfp, pfLE);}
-iexpr: NE(iexpr, iexpr) 1 {fprintf(outfp, pfNE);}
-iexpr: LOGIC_EQUAL(iexpr, iexpr) 1 {fprintf(outfp, pfEQ);}
-iexpr: AND(iexpr, iexpr) 1 {fprintf(outfp, pfAND);}
-iexpr: OR (iexpr, iexpr) 1 {fprintf(outfp, pfOR);}
-iexpr: FACTORIAL(iexpr) 1 {/*fprintf(outfp)*/ /*FIXME*/}
+rexpr: FACTORIAL(iexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfDPUSH, "_factorial", 4); addFactorial();}
 iexpr: NOT(iexpr) 1 {fprintf(outfp, pfIMM pfEQ, 0);}
 iexpr: UMINUS(iexpr) 1 {fprintf(outfp, pfNEG);}
 
@@ -239,20 +199,40 @@ iexpr: INCR(ilval) 1 {fprintf(outfp, pfDUP pfINCR pfLOAD, 1);}
 iexpr: DECR(ilval) 1 {fprintf(outfp, pfDUP pfDECR pfLOAD, 1);}
 iexpr: POSINC(ilval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfINCR, 1);}
 iexpr: POSDEC(ilval) 1 {fprintf(outfp, pfDUP pfLOAD pfSWAP pfDECR, 1);}
+iexpr: REF(lval)
+
 
 %! assign integers to IDS
-iexpr: PTR(ilval) 1 {if (LEFT_CHILD(p)->place == 2) { fprintf(outfp, pfLDCHR);}
+iexpr: PTR(ilval) isInt {if (LEFT_CHILD(p)->place == 2) { fprintf(outfp, pfLDCHR);}
                         else {fprintf(outfp, pfLOAD);}}
-                        
-iexpr: PTR(slval) 1 {fprintf(outfp, pfLDCHR);}
+iexpr: PTR(PTR(ilval)) isInt {fprintf(outfp, pfLOAD pfLOAD);}
+iexpr: PTR(PTR(slval)) isInt {fprintf(outfp, pfLOAD pfLDCHR);}
 
 %!integer expression is a function that returns int
-iexpr: CALL(ID, arguments) isIntFunction {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s), (int)((RIGHT_CHILD(p)->place)));
-																					 p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+iexpr: CALL(ID, arguments) isInt {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s),(int)((RIGHT_CHILD(p)->place)));
+p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
-iexpr: CALL(ID, VOID) isIntFunction {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s));
-																			p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+iexpr: CALL(ID, VOID) isInt {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s));
+									p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
+%!FIXME
+cmp: iexpr 1 {}
+cmp: sexpr 1 {}
+iexpr: LT(cmp, cmp) 1 {fprintf(outfp, pfLT);}
+iexpr: GT(cmp, cmp) 1 {fprintf(outfp, pfGT);}
+iexpr: GE(cmp, cmp) 1 {fprintf(outfp, pfGE);}
+iexpr: LE(cmp, cmp) 1 {fprintf(outfp, pfLE);}
+iexpr: NE(cmp, cmp) 1 {fprintf(outfp, pfNE);}
+iexpr: LOGIC_EQUAL(cmp, cmp) 1 {fprintf(outfp, pfEQ);}
+iexpr: AND(cmp, cmp) 1 {fprintf(outfp, pfAND);}
+iexpr: OR (cmp, cmp) 1 {fprintf(outfp, pfOR);}
+
+iexpr: LT(sexpr, sexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH pfIMM pfLT, "_strcmp", 8, 0); addStrcmp();}
+iexpr: GT(sexpr, sexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH pfIMM pfGT, "_strcmp", 8, 0); addStrcmp();}
+iexpr: GE(sexpr, sexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH pfIMM pfGE, "_strcmp", 8, 0); addStrcmp();}
+iexpr: LE(sexpr, sexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH pfIMM pfLE, "_strcmp", 8, 0); addStrcmp();}
+iexpr: NE(sexpr, sexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH pfIMM pfNE, "_strcmp", 8, 0); addStrcmp();}
+iexpr: LOGIC_EQUAL(sexpr, sexpr) 1 {fprintf(outfp, pfCALL pfTRASH pfPUSH pfIMM pfEQ, "_strcmp", 8, 0); addStrcmp();}
 
 
 %! comparisons between real expressions return int
@@ -264,18 +244,29 @@ iexpr: LOGIC_EQUAL(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfEQ, 0);}
 iexpr: NE(rexpr, rexpr) 1 {fprintf(outfp, pfDCMP pfIMM pfNE, 0);}
 
 
-%!optimization of ors and ands
-%!iexpr:	AND(iand,iexpr)	1 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
-%!iand:	iexpr		1 { p->place = ++lbl; fprintf(outfp, pfDUP pfJZ pfTRASH, mklbl(p->place), 4);}
-%!iexpr:	OR(ior,iexpr)	1 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
-%!ior: iexpr 1 { p->place = ++lbl; fprintf(outfp, pfDUP pfJNZ pfTRASH, mklbl(p->place), 4); }
+slval: LOCAL isString {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
+slval: ID isString {fprintf(outfp, pfADDR, p->value.s);}
+slval: INDEX(lvec, expr) isString { fprintf(outfp, pfIMM pfMUL pfADD, 4);}
+%! expressions relating to strings
+sexpr:	STR	1	{	lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL, mklbl(lbl));
+					outstr(p->value.s); fprintf(outfp, pfTEXT pfADDR, mklbl(lbl));}
+sexpr: PTR(slval) isString {fprintf(outfp, pfLOAD);}
+sexpr: PTR(PTR(ilval)) isString {fprintf(outfp, pfLOAD pfLOAD);}
 
-
-%! is a int pointer
-iptrexpr: REF(ilval)
-
+sassign: sexpr 1 {fprintf(outfp, pfDUP);}
+sassign: iexpr 1 {fprintf(outfp, pfDUP); /*assign to pointer or null (0)*/}
+sexpr: ATR(sassign, slval) 1 {fprintf(outfp, pfSTORE);}
+sexpr: CALL(ID, arguments) isString {fprintf(outfp, pfCALL pfTRASH pfPUSH, mkfunc(LEFT_CHILD(p)->value.s),
+													 (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
+sexpr: CALL(ID, VOID) isString {fprintf(outfp, pfCALL pfPUSH, mkfunc(LEFT_CHILD(p)->value.s));
+							 	p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
 %! expressions relating to real numbers
+rexpr: PTR(rlval) isReal {fprintf(outfp, pfLOAD2);}
+rexpr: PTR(PTR(ilval)) isReal {fprintf(outfp, pfLOAD pfLOAD2);}
+rlval: LOCAL isReal {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
+rlval: ID isReal {fprintf(outfp, pfADDR, p->value.s);}
+rlval: INDEX(lvec, expr) isReal { fprintf(outfp, pfIMM pfMUL pfADD, 8);}
 rexpr: ATR(rassign, rlval) 1 {fprintf(outfp, pfSTORE2);}
 rassign: rexpr 1 {fprintf(outfp, pfDUP2);}
 rexpr: REAL 1 {lbl++; fprintf(outfp, pfRODATA pfALIGN pfLABEL pfDOUBLE, mklbl(lbl), p->value.r);
@@ -286,110 +277,53 @@ rexpr: SUB(rexpr, rexpr) 1 {fprintf(outfp, pfDSUB);}
 rexpr: MUL(rexpr, rexpr) 1 {fprintf(outfp, pfDMUL);}
 rexpr: DIV(rexpr, rexpr) 1 {fprintf(outfp, pfDDIV);}
 rexpr: iexpr 1 {fprintf(outfp, pfI2D);}
-
-%!assign reals to IDS
-rexpr: PTR(rlval) 1 {fprintf(outfp, pfLOAD2);}
-
-%!real expression is a function that returns real
-rexpr: CALL(ID, arguments) isRealFunction {fprintf(outfp, pfCALL pfTRASH pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s),
+rexpr: CALL(ID, arguments) isReal {fprintf(outfp, pfCALL pfTRASH pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s),
 														 (int)((RIGHT_CHILD(p)->place))); p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8 : 4;}
-
-rexpr: CALL(ID, VOID) isRealFunction {fprintf(outfp, pfCALL pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s));
+rexpr: CALL(ID, VOID) isReal { fprintf(outfp, pfCALL pfDPUSH, mkfunc(LEFT_CHILD(p)->value.s));
 									 p->place = IDfind(LEFT_CHILD(p)->value.s, NULL) == 3 ? 8: 4;}
 
+
 %!Arguments of function calls
-arguments: ARGS(NIL, expr) {p->place = RIGHT_CHILD(p)->place; }
-arguments: ARGS(arguments, expr) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place;}
+arguments: ARGS(expr, NIL) {p->place = LEFT_CHILD(p)->place;}
+arguments: ARGS(expr, arguments) {p->place = LEFT_CHILD(p)->place + RIGHT_CHILD(p)->place;}
 
 
-%!expr relating to integer pointers
-iptrlval: LOCAL isIntPointer {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
-iptrlval: ID isIntPointer {fprintf(outfp, pfADDR, p->value.s);}
-iptrlvec: iptrlval 1 {fprintf(outfp, pfLOAD);}
-iptrexpr: REF(ilval) 1
-%!indexation of a pointer is an iexpr
-ilval: INDEX(iptrlvec, expr) isInt { fprintf(outfp, pfIMM pfMUL pfADD, 4);}
-iptrexpr: PTR(iptrlval) 1 {fprintf(outfp, pfLOAD);}
-iexpr: PTR(iptrexpr) 1 {fprintf(outfp, pfLOAD);}
-iptrexpr: REF(ilval) 1 {/*generate no code*/}
-iptrassign: iptrexpr 1 {fprintf(outfp, pfDUP);}
-iptrexpr: ATR(iptrassign, iptrlval) 1 {fprintf(outfp, pfSTORE);}
-
-%!expr relating to string pointers
-sptrlval: LOCAL isStringPointer {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
-sptrlval: ID isStringPointer {fprintf(outfp, pfADDR, p->value.s);}
-sptrlvec: sptrlval 1 {fprintf(outfp, pfLOAD);}
-sptrexpr: REF(slval) 1
-%!indexation of a pointer is an iexpr
-slval: INDEX(sptrlvec, expr) isString { fprintf(outfp, pfIMM pfMUL pfADD, 4);}
-
-sptrexpr: PTR(sptrlval) 1 {fprintf(outfp, pfLOAD);}
-sexpr: PTR(sptrexpr) 1 {fprintf(outfp, pfLOAD);}
-
-sptrexpr: REF(slval) 1 {/*generate no code*/}
-sptrassign: sptrexpr 1 {fprintf(outfp, pfDUP);}
-sptrexpr: ATR(sptrassign, sptrlval) 1 {fprintf(outfp, pfSTORE);}
-
-
-%!expr relating to real pointers
-rptrlval: LOCAL isRealPointer {fprintf(outfp, pfLOCAL, p->value.i * (pfWORD/4));}
-rptrlval: ID isRealPointer {fprintf(outfp, pfADDR, p->value.s);}
-rptrlvec: rptrlval 1 {fprintf(outfp, pfLOAD);}
-rptrexpr: REF(rlval) 1
-%!indexation of a pointer is an iexpr
-rlval: INDEX(rptrlvec, expr) isReal { fprintf(outfp, pfIMM pfMUL pfADD, 8);}
-
-rptrexpr: PTR(rptrlval) 1 {fprintf(outfp, pfLOAD);}
-rexpr: PTR(rptrexpr) 1 {fprintf(outfp, pfLOAD2);}
-
-rptrexpr: REF(rlval) 1 {/*generate no code*/}
-rptrassign: rptrexpr 1 {fprintf(outfp, pfDUP);}
-rptrexpr: ATR(rptrassign, rptrlval) 1 {fprintf(outfp, pfSTORE);}
-
-iexpr: LT(sptrexpr, sptrexpr) 1 {fprintf(outfp, pfLT);}
-iexpr: GT(sptrexpr, sptrexpr) 1 {fprintf(outfp, pfGT);}
-iexpr: GE(sptrexpr, sptrexpr) 1 {fprintf(outfp, pfGE);}
-iexpr: LE(sptrexpr, sptrexpr) 1 {fprintf(outfp, pfLE);}
-iexpr: LOGIC_EQUAL(sptrexpr, sptrexpr) 1 {fprintf(outfp, pfEQ);}
-iexpr: NE(sptrexpr, sptrexpr) 1 {fprintf(outfp, pfNE);}
-
-iptrcmp: iptrexpr 1 {fprintf(outfp, pfSTORE);}
-iexpr: LT(rptrexpr, rptrexpr) 1 {fprintf(outfp, pfLT);}
-iexpr: GT(rptrexpr, rptrexpr) 1 {fprintf(outfp, pfGT);}
-iexpr: GE(rptrexpr, rptrexpr) 1 {fprintf(outfp, pfGE);}
-iexpr: LE(rptrexpr, rptrexpr) 1 {fprintf(outfp, pfLE);}
-iexpr: LOGIC_EQUAL(rptrexpr, rptrexpr) 1 {fprintf(outfp, pfEQ);}
-iexpr: NE(rptrexpr, rptrexpr) 1 {fprintf(outfp, pfNE);}
-
-iptrcmp: iptrexpr 1 {fprintf(outfp, pfSTORE);}
-iexpr: LT(iptrcmp, iptrcmp) 1 {fprintf(outfp, pfLT);}
-iexpr: GT(iptrcmp, iptrcmp) 1 {fprintf(outfp, pfGT);}
-iexpr: GE(iptrcmp, iptrcmp) 1 {fprintf(outfp, pfGE);}
-iexpr: LE(iptrcmp, iptrcmp) 1 {fprintf(outfp, pfLE);}
-iexpr: LOGIC_EQUAL(iptrcmp, iptrcmp) 1 {fprintf(outfp, pfEQ);}
-iexpr: NE(iptrcmp, iptrcmp) 1 {fprintf(outfp, pfNE);}
-
+expr:	AND(and,iexpr)	1 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
+and:	iexpr		1 { p->place = ++lbl; fprintf(outfp, pfDUP pfJZ pfTRASH, mklbl(p->place), 4); }
+expr:	OR(or,iexpr)	1 { fprintf(outfp, pfLABEL, mklbl(LEFT_CHILD(p)->place)); }
+or: iexpr 1 { p->place = ++lbl; fprintf(outfp, pfDUP pfJNZ pfTRASH, mklbl(p->place), 4); }
 
 
 %!otimizacoes condicoes
-cond: LT(iexpr, iexpr) {p->place = ++lbl; fprintf(outfp, pfJGE, mklbl(p->place));}
-cond: GT(iexpr, iexpr) {p->place = ++lbl; fprintf(outfp, pfJLE, mklbl(p->place));}
-cond: LE(iexpr, iexpr) {p->place = ++lbl; fprintf(outfp, pfJGT, mklbl(p->place));}
-cond: GE(iexpr, iexpr) {p->place = ++lbl; fprintf(outfp, pfJLT, mklbl(p->place));}
-cond: LOGIC_EQUAL(iexpr, iexpr) {p->place = ++lbl; fprintf(outfp, pfJNE, mklbl(p->place));}
-cond: NE(iexpr, iexpr) {p->place = ++lbl; fprintf(outfp, pfJEQ, mklbl(p->place));}
+cond: LT(cmp, cmp) 1 {p->place = ++lbl; fprintf(outfp, pfJGE, mklbl(p->place));}
+cond: GT(cmp, cmp) 1 {p->place = ++lbl; fprintf(outfp, pfJLE, mklbl(p->place));}
+cond: LE(cmp, cmp) 1 {p->place = ++lbl; fprintf(outfp, pfJGT, mklbl(p->place));}
+cond: GE(cmp, cmp) 1 {p->place = ++lbl; fprintf(outfp, pfJLT, mklbl(p->place));}
+cond: LOGIC_EQUAL(cmp, cmp) 1 {p->place = ++lbl; fprintf(outfp, pfJNE, mklbl(p->place));}
+cond: NE(cmp, cmp) 1 {p->place = ++lbl; fprintf(outfp, pfJEQ, mklbl(p->place));}
+cond: expr 1 {p->place = ++lbl; fprintf(outfp, pfJZ, mklbl(p->place));}
 
-cond: LT(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJGE, mklbl(p->place));}
-cond: GT(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJLE, mklbl(p->place));}
-cond: LE(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJGT, mklbl(p->place));}
-cond: GE(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJLT, mklbl(p->place));}
-cond: LOGIC_EQUAL(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJNE, mklbl(p->place));}
-cond: NE(scmp, scmp) {p->place = ++lbl; fprintf(outfp, pfJEQ, mklbl(p->place));}
-
+%! otimizacoes atribuicoes
+base: ATR(ADD(PTR(ilval), INT), LOCAL) compareNodeLeft {fprintf(outfp, pfINCR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(SUB(PTR(ilval), INT), LOCAL) compareNodeLeft {fprintf(outfp, pfDECR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(ADD(INT, PTR(ilval)), LOCAL) compareNodeRight {fprintf(outfp, pfINCR, LEFT_CHILD(LEFT_CHILD(p))->value.i);}
 
 
+base: ATR(ADD(PTR(ilval), INT), ID) compareNodeLeft {fprintf(outfp, pfINCR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(SUB(PTR(ilval), INT), ID) compareNodeLeft {fprintf(outfp, pfDECR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(ADD(INT, PTR(ilval)), ID) compareNodeRight {fprintf(outfp, pfINCR, LEFT_CHILD(LEFT_CHILD(p))->value.i);}
+
+
+base: ATR(ADD(PTR(ilval), INT), INDEX(LOCAL, INT)) compareNodeLeft {fprintf(outfp, pfINCR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(SUB(PTR(ilval), INT), INDEX(LOCAL, INT)) compareNodeLeft {fprintf(outfp, pfDECR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(ADD(INT, PTR(ilval)), INDEX(LOCAL, INT)) compareNodeRight {fprintf(outfp, pfINCR, LEFT_CHILD(LEFT_CHILD(p))->value.i);}
+
+base: ATR(ADD(PTR(ilval), INT), INDEX(ID, INT)) compareNodeLeft {fprintf(outfp, pfINCR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(SUB(PTR(ilval), INT), INDEX(ID, INT)) compareNodeLeft {fprintf(outfp, pfDECR, RIGHT_CHILD(LEFT_CHILD(p))->value.i);}
+base: ATR(ADD(INT, PTR(ilval)), INDEX(ID, INT)) compareNodeRight {fprintf(outfp, pfINCR, LEFT_CHILD(LEFT_CHILD(p))->value.i);}
 
 %%
+
 #include "y.tab.h"
 extern void yyerror(const char*);
 extern char **yynames;
@@ -403,6 +337,8 @@ void externs()
   for (i = 0; i < extcnt; i++)
     if (extrns[i])
       fprintf(outfp, pfEXTRN, extrns[i]);
+
+  fprintf(outfp, pfEXTRN, "_factorial");
 }
 
 
@@ -419,11 +355,11 @@ void function(int pub, Node *type, char *name, Node *body)
 			fflush(stdout);
   		fprintf(outfp, pfTEXT pfALIGN);
   		if(pub) {
-  		 fprintf(outfp, pfGLOBL, mkfunc(name), pfFUNC); 
+  		 fprintf(outfp, pfGLOBL, mkfunc(name), pfFUNC);
   		}
   		fprintf(outfp, pfLABEL pfENTER, mkfunc(name), - localPos * (pfWORD/4));
   		functionReturnType = type->value.i;
-  		printNode(body, stdout, yynames);
+  		if (trace) printNode(body, stdout, yynames);
   		yyselect(body);
   		fprintf(outfp, pfLEAVE pfRET); /* just in case ... */
 			freeNode(body);
@@ -440,25 +376,6 @@ void function(int pub, Node *type, char *name, Node *body)
 	}
 }
 
-
-void declare(int pub, int cnst, Node *type, char *name, Node *value)
-{
-  int typ;
-  if (!value) {
-    if (!pub && cnst) yyerror("local constants must be initialised");
-
-    return;
-  }
-  if (value->attrib = INT && value->value.i == 0 && type->value.i > 10)
-  	return; /* NULL pointer */
-  if ((typ = value->info) % 10 > 5) typ -= 5;
-
-  printf("type of id: %d\n", typ);
-  printf("my type: %d\n", type->value.i);
-
-  if (type->value.i != typ)
-    yyerror("wrong types in initialization");
-}
 
 void assign(int pub, int cnst, Node* type, char* name, Node* value) {
 	if(pub && !value) {
@@ -483,21 +400,26 @@ void assign(int pub, int cnst, Node* type, char* name, Node* value) {
 		/*cnst must be RODATA*/
 		fprintf(outfp, "%s", memseg);
 		fprintf(outfp, pfALIGN);
-		fprintf(outfp, pfLABEL, name);
 		if (value->info == 1) {
 			/*integer*/
+			fprintf(outfp, pfLABEL, name);
 			fprintf(outfp, pfINTEGER, value->value.i);
 		}
 
 		else if (value->info == 3) {
 			/*double*/
+			fprintf(outfp, pfLABEL, name);
 			fprintf(outfp, pfDOUBLE, value->value.r);
 		}
 		else if (value->info == 2 || value->info == 7) {
 			if(strcmp(memseg, pfRODATA) == 0) {
+				fprintf(outfp, pfLABEL, mklbl(++lbl));
 				outstr(value->value.s);
+				fprintf(outfp, pfLABEL pfID, name, mklbl(lbl));
+
 			}
 			else {
+			fprintf(outfp, pfLABEL, name);
 			char *l = mklbl(++lbl);
 			fprintf(outfp, pfRODATA pfALIGN pfLABEL, l);
 			outstr(value->value.s);
@@ -507,13 +429,13 @@ void assign(int pub, int cnst, Node* type, char* name, Node* value) {
 		}
 		else if (value->info > 10) {
 			/*value is an id*/
+			fprintf(outfp, pfLABEL, name);
 			fprintf(outfp, pfID, value->value.s);
 		}
 
 	}
 	else {
 		fprintf(outfp, pfBSS pfALIGN pfLABEL pfBYTE, name, type->value.i == 3 ? 8 : 4);
-
 	}
 }
 

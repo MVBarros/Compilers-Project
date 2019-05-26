@@ -1,0 +1,67 @@
+public void println()
+public void prints(string i)
+public void printi(integer i)
+
+integer i := 2;
+integer* ptr := i;
+
+public integer entry (integer argc, string *argv, string *envp) {
+	integer x;
+	x := 3;
+	x := x + 5;
+
+	prints("x value is ->");
+	printi(x);
+	println();
+
+	x := 5 + x;
+
+	prints("x value is ->");
+	printi(x);
+	println();
+
+	x := x - 5;
+
+	prints("x value is ->");
+	printi(x);
+	println();
+
+	i := i - 5;
+
+	prints("i value is ->");
+	printi(i);
+	println();
+
+
+	i := i + 5;
+
+
+	prints("i value is ->");
+	printi(i);
+	println();
+
+	ptr[0] := ptr[0] + 2;
+	prints("ptr value is ->");
+	printi(ptr[0]);
+	println();
+
+
+	ptr[0] := ptr[0] - 2;
+	prints("ptr value is ->");
+	printi(ptr[0]);
+	println();
+
+
+	ptr[0] := 2 + ptr[0] ;
+	prints("ptr value is ->");
+	printi(ptr[0]);
+	println();
+
+
+	ptr[0] := 2 - ptr[0];
+	prints("ptr value is ->");
+	printi(ptr[0]);
+	println();
+
+	entry := 0;	
+};

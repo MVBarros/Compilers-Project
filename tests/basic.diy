@@ -2,14 +2,7 @@ public void printi(integer i)
 public void println()
 
 public integer f5(integer a, integer b, integer c, number d) {
-	printi(a)
-	println()
-	printi(b)
-	println()
-	printi(c)
-	println()
-
-	f5 := 5;
+	f5 := 5 * a; 
 };
 
 public integer entry (integer argc, string *argv, string *envp) {
@@ -55,7 +48,10 @@ public integer entry (integer argc, string *argv, string *envp) {
 	println();
 	printi(k);
 	println();
-	k := f5(10, 10, 10, 2.0);
+	k := f5(27, 2, 3, 4.0);
+	printi(k);
+	println();
+	k := 3 & 4;
 	printi(k);
 	println();
 	entry := 0;

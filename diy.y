@@ -9,14 +9,14 @@
 
 extern int yylex();
 void yyerror(char *s);
-//void declare(int pub, int cnst, Node *type, char *name, Node *value);
 void enter(int pub, int typ, char *name);
 int checkargs(char *name, Node *args);
 int nostring(Node *arg1, Node *arg2);
 int intonly(Node *arg, int);
 int noassign(Node *arg1, Node *arg2);
 extern void function(int pub, Node *type, char *name, Node *body);
-extern void declare(int pub, int cnst, Node *type, char *name, Node *value);
+
+void declare(int pub, int cnst, Node *type, char *name, Node *value);
 extern void assign(int pub, int cnst, Node *type, char *name, Node *value);
 
 
@@ -29,6 +29,7 @@ extern FILE* outfp;
 
 int localPos = 0;
 int globalPos = 8;
+
 
 %}
 
@@ -72,8 +73,8 @@ file	:
 	| file public CONST tipo ID ';'	{ IDnew($4->value.i+5, $5, 0); declare($2, 1, $4, $5, 0); assign($2, 1, $4, $5, 0); }
 	| file public tipo ID init	{ IDnew($3->value.i, $4, 0); declare($2, 0, $3, $4, $5); assign($2, 0, $3, $4, $5); }
 	| file public CONST tipo ID init	{ IDnew($4->value.i+5, $5, 0); declare($2, 1, $4, $5, $6); assign($2, 1, $4, $5, $6); }
-	| file public tipo ID { enter($2, $3->value.i, $4); } finit { function($2, $3, $4, $6);  }
-	| file public VOID ID { enter($2, 4, $4); } finit { function($2, intNode(VOID, 4), $4, $6); }
+	| file public tipo ID { enter($2, $3->value.i, $4); } finit { function($2, $3, $4, $6); }
+	| file public VOID ID { enter($2, 4, $4); } finit { function($2, intNode(VOID, 4), $4, $6);}
 	;
 
 public	:               { $$ = 0; }
@@ -127,6 +128,7 @@ param	: tipo ID               { $$ = binNode(PARAM, $1, strNode(ID, $2));
                                   else {
                                   	localPos -= $1->value.i == 3 ? 8 : 4;
                                   	IDnew($1->value.i, $2, localPos);
+
                                   }
 
                                 }
@@ -138,14 +140,16 @@ stmt	: base
 
 base	: ';'                   { $$ = nilNode(VOID); }
 	| DO { ncicl++; } stmt WHILE expr ';' { $$ = binNode(WHILE, binNode(DO, nilNode(START), $3), $5); ncicl--; }
-	| FOR lv IN expr UPTO expr step DO { ncicl++; } stmt       { $$ = binNode(';', binNode(ATR, $4, $2), binNode(FOR, binNode(IN, nilNode(START), binNode(LE, uniNode(PTR, $2), $6)), binNode(';', $10, binNode(ATR, binNode('+', uniNode(PTR, $2), $7), $2)))); ncicl--; $2->info = 1;
+	| FOR lv IN expr UPTO expr step DO { ncicl++; } stmt       { Node* interm = uniNode(PTR, $2); interm->info = $2->info;
+	$$ = binNode(';', binNode(ATR, $4, $2), binNode(FOR, binNode(IN, nilNode(START), binNode(LE, interm, $6)), binNode(';', $10, binNode(ATR, binNode('+', interm, $7), $2)))); ncicl--; $2->info = 1;
 	}
-	| FOR lv IN expr DOWNTO expr step DO { ncicl++; } stmt       { $$ = binNode(';', binNode(ATR, $4, $2), binNode(FOR, binNode(IN, nilNode(START), binNode(GE, uniNode(PTR, $2), $6)), binNode(';', $10, binNode(ATR, binNode('-', uniNode(PTR, $2), $7), $2)))); ncicl--; $2->info = 1;  }
+	| FOR lv IN expr DOWNTO expr step DO { ncicl++; } stmt       { Node* interm = uniNode(PTR, $2); interm->info = $2->info;
+	$$ = binNode(';', binNode(ATR, $4, $2), binNode(FOR, binNode(IN, nilNode(START), binNode(GE, interm, $6)), binNode(';', $10, binNode(ATR, binNode('-', interm, $7), $2)))); ncicl--; $2->info = 1;  }
 	| IF expr THEN stmt %prec IFX    { $$ = binNode(IF, $2, $4); }
 	| IF expr THEN stmt ELSE stmt    { $$ = binNode(ELSE, binNode(IF, $2, $4), $6); }
 	| expr ';'              { $$ = $1; }
 	| bloco                 { $$ = $1; }
-	| lv '#' expr ';'       { $$ = binNode('#', $3, $1); }
+	| lv '#' expr ';'       { $$ = binNode('#', $3, $1);}
 	| error ';'       { $$ = nilNode(NIL); }
 	;
 
@@ -168,8 +172,8 @@ list	: base
 	| list base     { $$ = binNode(LIST, $1, $2); }
 	;
 
-args	: expr		{ $$ = binNode(ARGS, nilNode(NIL), $1); }
-	| args ',' expr { $$ = binNode(ARGS, $1, $3); }
+args	: expr		{ $$ = binNode(ARGS, $1, nilNode(NIL)); $$->info = 1;}
+	| args ',' expr { $$ = binNode(ARGS, $3, $1); }
 	;
 
 lv	: ID		{ long pos; int typ = IDfind($1, &pos);
@@ -247,9 +251,26 @@ void enter(int pub, int typ, char *name) {
 		IDnew(typ+20, name, (long)fpar);
 	IDpush();
 	if (typ != 4) {
-		IDnew(typ, name, globalPos);
-		globalPos += typ == 3 ? 8 : 4;
+		localPos -= typ == 3 ? 8 : 4;
+		IDnew(typ, name, localPos);
 	}
+
+}
+
+void declare(int pub, int cnst, Node *type, char *name, Node *value)
+{
+  int typ;
+  if (!value) {
+    if (!pub && cnst) yyerror("local constants must be initialised");
+
+    return;
+  }
+  if (value->attrib = INT && value->value.i == 0 && type->value.i > 10)
+  	return; /* NULL pointer */
+  if ((typ = value->info) % 10 > 5) typ -= 5;
+
+  if (type->value.i != typ)
+    yyerror("wrong types in initialization");
 }
 
 int checkargs(char *name, Node *args) {
@@ -274,7 +295,7 @@ int checkargs(char *name, Node *args) {
 				err = 1;
 				break;
 			}
-			n = RIGHT_CHILD(args);
+			n = LEFT_CHILD(args);
 			typ = n->info;
 			if (typ % 10 > 5) typ -= 5; /* remove CONST */
 			null =  (n->attrib == INT && n->value.i == 0 && arg[i] > 10) ? 1 : 0;
@@ -283,7 +304,7 @@ int checkargs(char *name, Node *args) {
 				err = 1;
 				break;
 			}
-			args = LEFT_CHILD(args);
+			args = RIGHT_CHILD(args);
 			i--;
 		} while (args->attrib != NIL);
 		if (!err && i > 0)

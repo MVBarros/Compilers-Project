@@ -1,0 +1,28 @@
+public void println()
+public void prints(string i)
+public void printi(integer i)
+
+public integer entry (integer argc, string *argv, string *envp) {
+	integer i;
+	integer j;
+	i := 3;
+	j := 4;
+	if (i & j) then {
+		prints("in and if\n");
+	}
+
+	if (i | j) then {
+		prints("in or if\n");
+	}
+
+	if (~i | ~j) then {
+		prints("in or if\n");
+	}else {
+		prints("in else or if\n");
+	}
+	do {
+		prints("ola\n");
+		==Should print forever
+	}while (3 & 4)
+	entry := 0;
+};

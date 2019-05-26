@@ -12,7 +12,7 @@ const number q := 14.5;
 string s := "ola";
 string t := const "ola so que const";
 ==integer a := i;
-==const string u := "Ola eu sou uma string const";
+const string u := "Ola eu sou uma string const";
 public integer entry (integer argc, string *argv, string *envp) {
 	prints("i -> ");
 	printi(i);
@@ -44,13 +44,10 @@ public integer entry (integer argc, string *argv, string *envp) {
 	prints("s -> ");
 	prints(s);
 	println();
-	==prints("u -> ");
-	==prints(u);
-	==println();
+	prints("u -> ");
+	prints(u);
+	println();
 
-==	prints("a -> ");
-==	printi(a);
-==	println(	);
 
 	entry := 0;
 };

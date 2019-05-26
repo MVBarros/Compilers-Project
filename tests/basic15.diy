@@ -1,0 +1,84 @@
+public void printi(integer i)
+public void println()
+public void prints(string s)
+public void printd(number d)
+
+public integer strcmp(string a, string b) {
+  integer i
+  i := 0
+  if a[i] <> 0 & b[i] <> 0 & a[i] = b[i] then
+    do
+      ++i
+    while a[i] <> 0 & b[i] <> 0 & a[i] = b[i];
+  strcmp := b[i] - a[i];
+};
+
+public string strcpy(string a, string b) {
+  integer i
+  i := 0
+  strcpy := a
+
+  if b <> 0 & *b <> 0 then
+    do {
+      a[i] := b[i];
+      i++;
+    } while b[i] <> 0
+  a[i] := 0
+};
+
+public string strchr(string a, integer b) {
+  integer i
+  i := 0
+  strchr := 0
+  if *a <> 0 then
+    do
+      if a[i] = b then {
+        strchr := &a[i];
+        break;
+      } else ++i
+    while a[i] <> 0
+};
+
+
+public integer entry (integer argc, string *argv, string *envp) {
+  string s;
+  string t;
+  string u;
+  string v;
+  string w;
+  integer i;
+  v # 20;
+
+  v[0] := 100;
+  v[1] := 100;
+  v[2] := 100;
+  v[3] := 100;
+  v[4] := 100;
+  v[5] := 101;
+  v[6] := 0;
+  prints(v)
+  println()
+  s := "ola"
+  t := "ola"
+  prints("strcmp -> ")
+  printi(strcmp(s, t))
+  println()
+  prints("strchr -> ")
+  prints(strchr(s, 108))
+  println()
+
+  prints("strcpy -> ")
+  u := 0;
+
+  prints(strcpy(v, "hello world"))
+  println()
+  w # 30
+
+  for i in 0 upto 10 step 1 do {
+    w[i] := 100 + i;
+  }
+  w[11] := 0;
+  prints(w)
+  println()
+  entry := 0;
+};
